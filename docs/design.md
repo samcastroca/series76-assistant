@@ -1,0 +1,315 @@
+# Series 76 Technical Assistant — Propuesta de sistema
+
+Nov 3, 2026 · @Samuel Castro Carmona
+
+## Resumen y principios de diseño
+
+El sistema trata las tablas del PDF como datos estructurados en PostgreSQL, no como texto para RAG. El agente LangChain solo consulta esos datos mediante tools tipadas, y la app dibuja los números directamente desde la salida de las tools. Así, ningún número que ve el usuario pasa por la redacción del LLM.
+
+Principios que guían cada decisión:
+
+1. **Los datos mandan, el LLM conversa.** El LLM interpreta la intención, elige la tool y redacta. Los números viajan en un campo estructurado (`products`) que sale de la base de datos.
+2. **Determinismo donde importa.** La ingesta, el filtrado y el ranking son código Python con tests. El LLM no filtra ni ordena actuadores.
+3. **Fallar con información.** "No existe", "existe pero sin datos", "ambiguo" y "ningún modelo cumple" son respuestas distintas, cada una con su tipo.
+4. **Trazabilidad completa.** Cada dato apunta a su tabla y página de origen. Cada respuesta guarda sus tool calls para la pantalla de debug.
+5. **Presupuesto como requisito.** Desarrollo con LLM gratuito o simulado; la key de OpenRouter solo para validación final.
+
+Alcance de los datos: 7 tablas y 68 part numbers (11 + 16 + 11 weatherproof; 5 + 5 + 10 + 10 explosionproof), de los cuales 4 aparecen como N/A.
+
+## Arquitectura general
+
+Cuatro piezas: la app Android, un backend FastAPI con el agente, una instancia de PostgreSQL con dos áreas de datos y una ingesta que se ejecuta una sola vez. Todo el backend se levanta con `docker compose up`.
+
+&#91;embedded content: arquitectura · app, backend, Postgres, LLM e ingesta\]
+
+Las tools y el catálogo (resaltados) son el único camino hacia los números. El LLM recibe sus resultados, pero la app dibuja las specs desde `products`, que arma el backend.
+
+## Modelo de datos e ingesta
+
+Tres tablas normalizadas, porque el torque depende del tipo de servicio y la velocidad y las corrientes dependen de la frecuencia. Encima, una vista plana `v_actuator_specs` que consultan las tools.
+
+```sql
+CREATE TABLE actuators (
+  part_number     TEXT PRIMARY KEY,   -- '763B00-11320000/A'
+  part_key        TEXT UNIQUE,        -- normalizado: '763B001132000A'
+  series_size     INT,                -- 3
+  variant         TEXT,               -- 'B'
+  enclosure       TEXT,               -- 'weatherproof' | 'explosionproof'
+  certifications  TEXT[],             -- texto tal cual de la tabla
+  csa_certified   BOOLEAN,            -- false para tamaños 6 y 7 (*)
+  voltage_v       INT,                -- 24 | 110 | 220
+  phase           INT,                -- 1 | 3 | NULL (24V)
+  current_type    TEXT,               -- 'AC' | 'DC' | 'AC/DC'
+  motor_power_w   INT,
+  data_available  BOOLEAN,            -- false en filas N/A
+  source_table    TEXT, source_page INT
+);
+
+CREATE TABLE service_ratings (
+  part_number     TEXT REFERENCES actuators,
+  service_type    TEXT,  -- 'on_off' | 'modulating' | 'unspecified' (trifásico)
+  torque_inlb     INT, torque_nm INT,
+  duty_cycle_pct  INT, cycles_per_hour INT, starts_per_hour INT,
+  PRIMARY KEY (part_number, service_type)
+);
+
+CREATE TABLE electrical_ratings (
+  part_number     TEXT REFERENCES actuators,
+  frequency_hz    INT,   -- 60 | 50 | NULL en 24V
+  speed_s INT, fla_a NUMERIC(5,2), lra_a NUMERIC(5,2)
+);
+```
+
+**Decisiones de modelado que conviene defender:**
+
+- `NULL` significa "no publicado"; nunca se usa 0.
+- El trifásico usa `service_type = 'unspecified'` porque la tabla no distingue on/off de modulante. El agente lo dice en lugar de asumir.
+- Se filtra en la unidad que dio el usuario (in-lb o Nm), porque los Nm de la tabla están redondeados.
+- `part_key` normalizado (sin guiones, espacios ni barra, en mayúsculas) permite encontrar "763b00 11320000 a".
+- Se habilita `pg_trgm` para sugerir part numbers parecidos. `pgvector` no se usa para los números; se justifica en el README.
+
+**Pipeline de ingesta (`ingest.py`):**
+
+1. **Especificación declarativa por tabla** (`tables.yaml`): página, encapsulado, voltaje, fase, tipo de corriente, servicios presentes y mapeo de columnas. Son solo 7 tablas, así que esto es más robusto que inferir la estructura.
+2. **Extracción** con `pdfplumber`. Limpia separadores de miles y asteriscos, y une letras en negrita partidas.
+3. **Normalización:** propaga Motor Power hacia abajo en celdas combinadas, marca las filas `N/A` y deriva `series_size` y `variant` del part number.
+4. **Validación** con Pydantic: tipos, rangos plausibles y que el sufijo del part number coincida con el voltaje de la tabla.
+5. **Salida revisable:** `data/processed/actuators.csv` y JSON, versionados en el repo.
+6. **Carga idempotente** en Postgres (upsert), ejecutada al arrancar con Docker Compose si la base está vacía.
+7. **Validación cruzada opcional:** extracción paralela con Gemini (Google AI Studio, gratis) y un diff contra la salida determinista.
+
+**Tests de ingesta:** 68 part numbers; 4 sin datos; 5 sin CSA; y unos 10 valores verificados a mano. Por ejemplo, `765Y30-11300000/A` da 25,900 in-lb on/off y `763C00-11330C00/A` da 5,300 in-lb.
+
+## Agente LangChain
+
+Un agente con tool calling (`create_agent` de LangChain sobre LangGraph) y tres tools con argumentos tipados en Pydantic. No se permite SQL generado por el LLM: cada tool ejecuta consultas parametrizadas.
+
+| Tool | Entrada | Salida | Casos que resuelve |
+| --- | --- | --- | --- |
+| `get_actuator` | `part_number` (texto libre) | `status`: found · partial\_match · not\_found · no\_data; specs completas; sugerencias | Consulta puntual, normalización, "¿quisiste decir…?", consultas parciales como "763C" |
+| `search_actuators` | enclosure, voltage\_v, phase, current\_type, service\_type, min\_torque + unidad, max\_speed\_s, min\_duty\_cycle, csa\_required, frequency\_hz, limit | candidatos ordenados; si no hay, `blocking_filters` y `closest_alternatives` | Recomendación, requisitos imposibles, alternativas |
+| `list_catalog_options` | campo opcional | valores disponibles y rangos (p. ej., torque máximo por encapsulado) | Ambigüedad, "¿qué voltajes hay?" |
+
+**Lógica de `search_actuators` (Python, no LLM):**
+
+1. Filtros duros: encapsulado, alimentación, servicio y certificación.
+2. Voltaje con tolerancia de ±10% (nota 3 de la tabla). Si el usuario tiene 230V, aplica la tabla de 220V; se informa en la respuesta.
+3. Torque mínimo en la unidad pedida. Orden por menor margen sobre lo requerido, luego por velocidad.
+4. Sin resultados: relaja un filtro a la vez y devuelve cuál bloqueó y la alternativa más cercana.
+
+**System prompt (puntos clave):**
+
+- Nunca escribir un número técnico que no venga de una tool en esta conversación.
+- Si faltan voltaje, servicio o encapsulado para recomendar, preguntar con opciones concretas en lugar de asumir.
+- Mencionar condiciones relevantes: sin certificación CSA, trifásico sin servicio especificado, 24V modulante solo DC, frecuencia 50/60 Hz.
+- Responder en el idioma del usuario.
+
+**Garantía de números, en tres capas:**
+
+1. **Estructura:** el campo `products` de la respuesta se construye en el backend con la salida de las tools, no con el texto del LLM. La app dibuja las tarjetas desde ahí.
+2. **Prompt:** el LLM tiene instrucciones de no citar números fuera de las tools.
+3. **Verificación:** un validador extrae los números del `answer` y comprueba que existan en los resultados de tools del turno o de la sesión. Si alguno no aparece, se regenera una vez con un aviso; si persiste, se eliminan los números del texto y se remite a las tarjetas.
+
+**Contexto entre turnos:** el historial incluye los mensajes de tool. Además, la sesión guarda `active_parts` (los últimos part numbers mostrados), así "¿y cuánto consume?" se resuelve sin repetir el número. "Consume" se responde con Motor Power (W) y la FLA como contexto.
+
+## API REST
+
+La respuesta separa lo que ve el usuario (`answer`, `products`, `clarification`) de lo interno, que va en un endpoint de trazas aparte. Así el chat nunca recibe nombres de tools.
+
+```json
+POST /api/conversation
+{ "session_id": "opcional", "query": "Necesito 1,500 Nm a 220V monofásico, modulante, weatherproof" }
+
+200 OK
+{
+  "session_id": "7f3c…",
+  "message_id": "a91e…",
+  "answer": "Varios modelos cumplen. El de menor margen sobre lo pedido es…",
+  "response_type": "recommendation",
+  "products": [
+    {
+      "part_number": "765A00-11320000/A",
+      "enclosure": "weatherproof",
+      "power_supply": { "voltage_v": 220, "phase": 1, "current_type": "AC" },
+      "certifications": ["CSA", "CE", "UKCA"],
+      "service": [ { "type": "modulating", "torque": {"in_lb": 15000, "nm": 1700}, "duty_cycle_pct": 35, "starts_per_hour": 840 } ],
+      "electrical": [ { "frequency_hz": 60, "speed_s": 88, "fla_a": 3.3, "lra_a": 3.8 }, { "frequency_hz": 50, "speed_s": 106, "fla_a": 3.2, "lra_a": 3.9 } ],
+      "motor_power_w": 180,
+      "notes": [],
+      "source": { "table": "Weatherproof 220V 1ph", "page": 1 }
+    }
+  ],
+  "highlight_fields": ["torque", "speed_s"],
+  "clarification": null,
+  "suggestions": []
+}
+```
+
+`response_type` toma uno de estos valores: `detail`, `recommendation`, `comparison`, `clarification`, `no_match`, `not_found`, `no_data` o `error`. La app elige la vista según este campo. `clarification` lleva `{ question, options[] }` y la app lo muestra como chips.
+
+| Método | Ruta | Uso |
+| --- | --- | --- |
+| POST | `/api/conversation` | Turno de chat (contrato fijo) |
+| GET | `/api/sessions` | Lista: id, título, fecha de actualización, número de mensajes |
+| GET | `/api/sessions/{id}/messages` | Historial con `products` por mensaje, para reconstruir las tarjetas |
+| DELETE | `/api/sessions/{id}` | Borrar conversación (extra útil en la app) |
+| GET | `/api/messages/{id}/trace` | Debug: tool calls, argumentos, resultados, modelo, tokens, costo, latencia |
+| POST | `/api/auth/login` | Opcional: `{ email, password }` → `{ token }` |
+| GET | `/health` | Estado de la base de datos y configuración del LLM |
+
+Cambio respecto a lo sugerido: la traza vive en `/api/messages/{id}/trace` y no dentro de la respuesta del chat. Esto mantiene liviano el payload del usuario y permite proteger el debug con un header `X-Debug-Key` o activarlo solo con `DEBUG_API=true`.
+
+Errores con un formato único `{ "error": { "code", "message" } }`: 400 para query vacía o demasiado larga, 404 para sesión inexistente y 503 cuando el proveedor LLM falla o se agota la key. Un fallo del LLM nunca deja la sesión a medias.
+
+## Persistencia de conversaciones y trazas
+
+Tablas propias en la misma instancia de Postgres, en lugar de un checkpointer opaco. Así la misma fuente sirve para reanudar el agente, listar sesiones en la app y alimentar el debug.
+
+```sql
+CREATE TABLE sessions (
+  id UUID PRIMARY KEY, user_id UUID NULL,
+  title TEXT, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ,
+  state JSONB          -- { active_parts: [...], last_filters: {...} }
+);
+CREATE TABLE messages (
+  id UUID PRIMARY KEY, session_id UUID REFERENCES sessions,
+  role TEXT,           -- 'user' | 'assistant'
+  content TEXT,
+  payload JSONB,       -- products, response_type, clarification
+  created_at TIMESTAMPTZ
+);
+CREATE TABLE tool_calls (
+  id UUID PRIMARY KEY, message_id UUID REFERENCES messages,
+  seq INT, tool_name TEXT, args JSONB, result JSONB,
+  latency_ms INT, error TEXT
+);
+CREATE TABLE llm_usage (
+  message_id UUID REFERENCES messages, model TEXT,
+  input_tokens INT, output_tokens INT, cost_usd NUMERIC(10,6)
+);
+```
+
+**Reconstrucción del contexto en cada turno:** se cargan los últimos N turnos (configurable con `HISTORY_TURNS`, por defecto 10). Los resultados de tools antiguos se resumen como "se mostró el producto X" para no reenviar JSON grande. `state.active_parts` se inyecta en el prompt para resolver referencias como "ese" o "el segundo".
+
+**Título de la sesión:** se genera a partir de la primera consulta sin llamar al LLM (por ejemplo, el part number detectado o los primeros 60 caracteres). Ahorra una llamada por conversación.
+
+**Consistencia:** el turno se guarda en una transacción al final (mensaje del usuario, tool calls, respuesta y uso). Si el LLM falla, se guarda el mensaje del usuario con un estado de error para que la app pueda reintentar.
+
+## Selección de modelos y presupuesto
+
+Un solo modelo económico con buen tool calling para el agente basta, porque el trabajo pesado lo hace el código. No hacen falta embeddings.
+
+| Tarea | Variable de entorno | Criterio de elección | Candidatos (verificar precio actual en OpenRouter) |
+| --- | --- | --- | --- |
+| Agente (tool calling + redacción) | `AGENT_MODEL` | Tool calling fiable, bajo costo por token, buen español | Familias tipo Gemini Flash, GPT mini o Claude Haiku |
+| Respaldo si el principal falla | `FALLBACK_MODEL` | Proveedor distinto | Otro de la lista anterior |
+| Validación cruzada de ingesta (solo desarrollo) | `INGEST_LLM_MODEL` | Gratis; se ejecuta una vez | Gemini vía Google AI Studio |
+| Transcripción de voz (opcional) | — | Sin costo | Reconocimiento de voz del dispositivo |
+
+Decisión: no se usan embeddings ni pgvector. Los datos son 68 filas con campos tipados, y la búsqueda por filtros es exacta y explicable. pgvector solo tendría sentido para el texto del summary, que cabe completo en el prompt.
+
+**Control del gasto:**
+
+- `LLM_PROVIDER=openrouter|google|fake`. El modo `fake` responde con un guion fijo y llama tools reales: sirve para tests y CI sin gastar.
+- `max_tokens` acotado (por ejemplo, 600) y temperatura 0.
+- Historial limitado y resultados de tools compactos (solo los campos necesarios).
+- Registro de costo por mensaje en `llm_usage` y un tope diario configurable (`DAILY_BUDGET_USD`) que responde 503 al superarse.
+- Prompt caching del proveedor cuando esté disponible, con el system prompt estable al inicio.
+- Un set de unas 30 preguntas de evaluación que se ejecuta con la key real solo 2 o 3 veces en total. Costo estimado: menos de USD 1 (estimación propia; depende del modelo elegido).
+
+## App móvil
+
+Android con Kotlin y Jetpack Compose. El emulador corre en Windows, macOS y Linux, lo que facilita que el evaluador reproduzca la app.
+
+**Arquitectura:** MVVM con un solo módulo. Retrofit + kotlinx.serialization para la API, ViewModels con `StateFlow<UiState>` (`Loading`, `Content`, `Error`), Hilt o inyección manual, y Navigation Compose. La URL del backend se configura en `local.properties` (`API_BASE_URL`, por defecto `http://10.0.2.2:8000`) y también desde una pantalla de ajustes oculta.
+
+| Pantalla | Contenido | Estados de carga y error |
+| --- | --- | --- |
+| Conversaciones | Lista con título, fecha relativa y primera línea; botón "Nueva conversación"; deslizar para borrar; pull to refresh | Skeleton al cargar; vacío con llamada a la acción; error con "Reintentar" |
+| Chat | Burbujas; tarjetas de producto; tabla comparativa; chips de aclaración; chips de sugerencias | Indicador "escribiendo"; mensaje fallido con reintento; banner sin conexión |
+| Debug | Por cada respuesta: tool calls en orden, argumentos y resultado en JSON plegable, modelo, tokens, costo y latencia | Carga bajo demanda; error si el backend no expone trazas |
+| Login (opcional) | Email y contraseña | Error de credenciales; token expirado lleva al login |
+
+**Cómo se muestran los productos, según `response_type`:**
+
+- `detail`: una tarjeta con encabezado (part number, encapsulado y alimentación como chips), una cuadrícula de specs con unidades y una tabla pequeña 60 Hz / 50 Hz.
+- `recommendation` o `comparison`: tabla comparativa con la columna de specs fija y una columna por modelo con scroll horizontal. Se resaltan los campos de `highlight_fields` y el mejor valor de cada fila.
+- `no_match` o `not_found`: tarjeta de aviso con las alternativas como chips que envían la consulta al tocarlos.
+- Avisos como "Sin certificación CSA" se muestran como badges en la tarjeta.
+
+El texto del `answer` nunca lleva tablas; los números se leen desde `products`. Esto cumple el requisito de no mostrar nombres de tools ni detalles internos.
+
+**Acceso al debug:** mantener presionada una respuesta del asistente abre su traza. Esta opción solo existe si el modo desarrollador está activo: se activa tocando 7 veces el título de la pantalla de Conversaciones, y en builds `debug` viene activo por defecto. Se documenta en el README.
+
+## Casos borde y pruebas
+
+Cada caso borde tiene un `response_type` esperado y un test automatizado. La mayoría se prueba sin LLM, directamente contra las tools.
+
+| Entrada de ejemplo | Situación | Comportamiento esperado | `response_type` |
+| --- | --- | --- | --- |
+| `761A00-11380000/A` | Formato válido, no existe (es el ejemplo del summary) | Decir que no existe y sugerir parecidos | `not_found` |
+| `761a00 11300000 a` | Formato informal | Normalizar y encontrar `761A00-11300000/A` | `detail` |
+| "763C" | Coincide con 3 modelos (110V, 220V, trifásico) | Preguntar con las 3 opciones | `clarification` |
+| `762A00-11330C00/A` | Listado como N/A | Existe, pero sin datos publicados | `no_data` |
+| "24V AC modulante" | El modulante de 24V es solo DC | Indicarlo; ofrecer 24V DC modulante o 24V AC/DC on/off | `no_match` |
+| "Explosionproof de 30,000 in-lb" | Máximo disponible: 25,900 in-lb | Indicar el máximo y la alternativa más cercana | `no_match` |
+| "Tamaño 7 con CSA" | Tamaños 6 y 7 no tienen CSA | Explicar el conflicto | `no_match` |
+| "Tengo 230V" | Dentro de 220V ±10% | Usar la tabla de 220V y decirlo | `recommendation` |
+| "¿Y cuánto consume?" tras una consulta | Seguimiento | Usar el part number activo; potencia del motor y FLA | `detail` |
+| "Compara 764A y 764B a 110V" | Comparación | Tabla comparativa | `comparison` |
+| "Recomiéndame uno" | Faltan requisitos | Pedir voltaje, servicio, torque y encapsulado | `clarification` |
+| "¿Cuál es el precio?" | Dato que no está en las tablas | Decir que no está disponible | `detail` o `no_data` |
+| Fuera de tema o inyección de prompt | — | Rechazo breve y redirección al catálogo | `error` (controlado) |
+
+**Niveles de prueba:**
+
+1. **Ingesta** (pytest, sin LLM): 68 filas, valores puntuales verificados a mano, N/A y CSA.
+2. **Tools** (pytest + Postgres en Docker): normalización, coincidencias parciales, filtros, tolerancia de voltaje, relajación de filtros.
+3. **API** (pytest + `LLM_PROVIDER=fake`): contrato, sesiones, persistencia tras reinicio y formato de errores.
+4. **Evaluación del agente** (`eval/cases.yaml`, unas 30 preguntas, con la key real): se comprueba la tool elegida, el `response_type` y que todos los números del `answer` existan en los resultados. Se ejecuta pocas veces por el presupuesto.
+5. **App:** tests de ViewModel con un repositorio falso y una prueba manual de los flujos principales.
+
+## Opcionales, repositorio, plan y riesgos
+
+**Opcionales recomendados** (bajo costo, buena impresión):
+
+- **Login:** JWT firmado con `JWT_SECRET`, contraseñas con bcrypt, 3 usuarios precargados por un seed y documentados en el README. `sessions.user_id` filtra todas las consultas. Si `AUTH_ENABLED=false`, la app funciona en modo de un solo usuario.
+- **Voz:** `SpeechRecognizer` de Android en el dispositivo. El texto transcrito se muestra editable antes de enviarlo. No gasta presupuesto ni requiere cambios en el backend.
+
+**Estructura del repositorio:**
+
+```
+/backend
+  app/ (api, agent, tools, db, services, schemas)
+  ingest/ (ingest.py, tables.yaml, validate.py)
+  data/raw/  data/processed/
+  tests/  eval/
+  Dockerfile  pyproject.toml
+/android
+/.claude/          configuración del asistente, como pide la prueba
+docker-compose.yml  .env.example  README.md
+```
+
+`docker compose up` levanta Postgres, ejecuta migraciones e ingesta si la base está vacía, y arranca FastAPI en el puerto 8000.
+
+**Plan de trabajo (7 días):**
+
+1. Esquema, `tables.yaml`, ingesta y tests de ingesta.
+2. Tools y tests de tools con Postgres en Docker.
+3. Agente, endpoint de conversación, persistencia y trazas, con `LLM_PROVIDER=fake` y Google.
+4. Casos borde, validador de números y primera ejecución de la evaluación con OpenRouter.
+5. App: Conversaciones y Chat con tarjetas.
+6. App: tabla comparativa, Debug, estados de error; login y voz si hay tiempo.
+7. README, prueba desde un clon limpio y evaluación final.
+
+**Riesgos y mitigación:**
+
+| Riesgo | Mitigación |
+| --- | --- |
+| Agotar los USD 10 | Modo `fake`, desarrollo con Google AI Studio, tope diario, evaluación con pocas ejecuciones |
+| Errores de extracción del PDF | Especificación por tabla, CSV revisable, tests con valores verificados y diff con extracción por LLM |
+| El LLM cita números incorrectos | `products` desde el backend y validador de números |
+| El evaluador no logra reproducir | Un solo comando con Docker, ingesta automática y prueba desde un clon limpio |
+| El modelo elige mal la tool | Descripciones de tools precisas, ejemplos en el prompt y evaluación del agente |
+
+**Preguntas probables en la entrevista:** por qué no RAG; por qué tablas normalizadas; cómo se garantiza que no se inventen números; qué pasa con el trifásico sin tipo de servicio; cómo escalaría a miles de productos (índices, más tablas en `tables.yaml`, y pgvector solo para texto libre).

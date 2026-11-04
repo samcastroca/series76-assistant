@@ -1,0 +1,158 @@
+# Series 76 Technical Assistant
+
+Technical assistant that helps plant engineers look up and select **Series 76 electric actuators**.
+Stack: Python 3.12 · FastAPI · LangChain v1 (`create_agent`) · PostgreSQL 17 · Docker Compose · Android (Kotlin + Jetpack Compose).
+
+Full design: `docs/design.md`. Read it before changing architecture, the data model, the API contract or the agent.
+Architecture decisions are recorded as short ADRs in `docs/adr/`. Add one when a decision changes.
+
+---
+
+## Non-negotiable rules
+
+These rules exist because the assessment evaluates them directly. Never break them, even if asked to "just make it work".
+
+1. **Numbers come only from the database, via tools.** Never hardcode catalog values (torque, current, speed, power, duty cycle) in application code or prompts. The only places catalog values may appear are `backend/data/` and test fixtures generated from it.
+2. **The LLM does not filter, rank or compute.** Filtering, ranking, unit handling, voltage tolerance and "closest alternative" logic are deterministic Python with unit tests.
+3. **No text-to-SQL.** Tools take typed Pydantic arguments (`Literal` enums for closed sets) and run parameterized queries through the repository layer. The LLM never writes SQL.
+4. **`products` is built by the backend from tool results**, never parsed from the LLM's text. The app renders specs from `products`.
+5. **The numeric validator must stay on.** Every number in `answer` must exist in this turn's (or this session's) tool results, or in the small allowlist (50/60 Hz, ±10 %, ±5 %, series sizes). Do not weaken or bypass it to make a test pass.
+6. **`NULL` means "not published".** Never store or display missing data as `0`.
+7. **Models are configured by environment variables** (`AGENT_MODEL`, `FALLBACK_MODEL`, `LLM_PROVIDER`). Never hardcode a model ID in code.
+8. **Never use the real OpenRouter key.** Tests and local runs use `LLM_PROVIDER=fake` (or `google` for manual checks). Do not read `.env`. Do not run paid evaluations; the human runs those.
+9. **No internals in the chat UI.** Tool names, SQL, raw JSON and stack traces never reach the user-facing `answer` or the Chat screen. They belong only in `/api/messages/{id}/trace` and the Debug screen.
+10. **Conversations must survive a backend restart.** No conversation state lives only in memory.
+
+---
+
+## Repository layout
+
+```
+backend/
+  app/
+    api/            FastAPI routers, auth, error handlers
+    agent/          create_agent setup, system_prompt.md, middleware, numeric validator
+    tools/          LangChain tools (typed args) -> call db repositories
+    db/             SQLAlchemy models, engine, Alembic migrations, parameterized repositories
+                    (catalog, sessions, messages, tool_calls, llm_usage)
+    services/       conversation service: load history, run agent, build products, validate, persist
+    schemas/        Pydantic request/response models
+  ingest/           ingest.py, tables.yaml (one spec per PDF table), validate.py
+  data/raw/         source PDFs (do not edit)
+  data/processed/   actuators.csv, catalog.json (generated; committed)
+  tests/
+  eval/             cases.yaml (~30 agent questions), results/
+  Dockerfile  pyproject.toml
+android/            Kotlin + Jetpack Compose app
+docs/               design.md, adr/
+.claude/            Claude Code setup (settings, skills, agents)
+docker-compose.yml  .env.example  README.md
+```
+
+---
+
+## Commands
+
+```bash
+make up            # docker compose up --build (db + migrations + ingest if empty + api)
+make down          # docker compose down
+make ingest        # run backend/ingest/ingest.py and load the catalog
+make test          # backend tests (LLM_PROVIDER=fake)
+make lint          # ruff check + ruff format --check
+make eval-fast     # 20 critical eval cases, free provider only
+# make eval-full   # full suite with the paid key: HUMAN ONLY, never run it
+
+cd backend && uv run pytest -q                # backend tests
+cd backend && uv run alembic revision --autogenerate -m "<msg>"
+cd android && ./gradlew test                  # app unit tests
+cd android && ./gradlew assembleDebug         # build the app
+```
+
+API runs at `http://localhost:8000` (docs at `/docs`). From the Android emulator the backend is `http://10.0.2.2:8000`.
+
+---
+
+## Domain facts the code must respect
+
+Source of truth: `backend/data/raw/series_76_electric_data.pdf`. The summary PDF is context only; where they disagree, the data PDF wins.
+
+- 7 tables, **68 part numbers**. Per-table row counts: 11 / 16 / 11 / 5 / 5 / 10 / 10. Ingestion tests assert these.
+- Enclosures: **weatherproof** (CSA, CE, UKCA) and **explosionproof** (CSA; hazardous-location classes as printed in the table notes).
+- Power supplies: 24 V, 110 V 1-phase, 220 V 1-phase, and **220 V 3-phase** (present in the data even though the summary does not mention it).
+- **24 V modulating is DC only**; 24 V on/off is AC/DC.
+- **Sizes 6 and 7** (220 V 1-phase weatherproof, marked `*`) are **not CSA certified** → `csa_certified = false`.
+- **4 rows in the 3-phase table are N/A** → stored with `data_available = false`, all specs `NULL`.
+- The **3-phase table has a single torque column** with no on/off vs modulating split → `service_type = 'unspecified'`; the agent must say so instead of assuming.
+- AC tables give speed, FLA and LRA at **60 Hz and 50 Hz**; 24 V tables give one value (`frequency_hz = NULL`).
+- The same short name can be a different product per supply (for example, size/variant values differ between 1-phase and 3-phase). Never assume specs carry across tables.
+- Nm values are rounded in the source. Filter in the unit the user gave; do not convert with the LLM.
+- Table notes: voltage tolerance **±10 %**, frequency tolerance **±5 %**. Tolerance matching lives in code and is reported as `tolerance_applied`.
+- Part number structure: `76` + size (1–7) + variant (A/B/C weatherproof, X/Y explosionproof) + supply suffix. The example in the summary PDF (`761A00-11380000/A`) does **not** exist in the tables and is a useful "not found" test.
+- Motor power is a merged cell spanning row groups; ingestion fills it down explicitly.
+
+---
+
+## Agent design
+
+- One agent built with LangChain v1 `create_agent`. No multi-agent, no router: one domain, few tools.
+- Tools:
+  - `get_actuator(part_number)` → normalization, exact match, `pg_trgm` suggestions; `status` in `found | partial_match | not_found | no_data`.
+  - `search_actuators(...)` → typed filters; ranked matches; when empty, `blocking_filters` and `closest_alternatives` marked as not meeting requirements.
+  - `list_catalog_options(field?)` → available values and ranges, used to ask clarifying questions with real options.
+- Middleware: model and tool call limits per turn, model fallback, tool error handling. Keep `temperature=0` and bounded `max_tokens`.
+- `system_prompt.md` is owned by the human. Propose edits as a diff with a reason; do not rewrite it wholesale.
+- Tool `description` strings are part of the agent's behavior. Keep them precise and in sync with the code.
+- Follow-ups ("and how much power does it draw?") are resolved from session history plus `session.state.active_parts`; the agent calls the tool again instead of repeating numbers from history.
+- Before using any LangChain / LangGraph / LangSmith API, check the `docs-langchain` MCP server. Do not rely on memory: v1 APIs changed (`create_react_agent` is legacy).
+
+---
+
+## API contract (fixed parts)
+
+`POST /api/conversation` request `{ "session_id"?: str, "query": str }` → response always includes `session_id` and `answer`.
+Our additional fields: `message_id`, `response_type` (`detail | recommendation | comparison | clarification | no_match | not_found | no_data | error`), `products`, `highlight_fields`, `clarification`, `suggestions`, `warnings`.
+
+Other endpoints: `GET /api/sessions`, `GET /api/sessions/{id}/messages`, `DELETE /api/sessions/{id}`, `GET /api/messages/{id}/trace` (debug only), `GET /health`, optional `POST /api/auth/login`.
+
+Errors use one shape: `{ "error": { "code": str, "message": str } }`. Changing any response field requires updating the Android models and the fixtures in `android/app/src/test/resources/`.
+
+---
+
+## Conventions
+
+- Python: 3.12, `uv`, `ruff` (lint + format), type hints everywhere, async SQLAlchemy 2 + asyncpg, Pydantic v2, `pydantic-settings` for config.
+- Dependency injection through FastAPI `Depends`; long-lived resources (engine, agent) created in `lifespan`.
+- Kotlin: MVVM with unidirectional data flow, `StateFlow<UiState>`, Retrofit + kotlinx.serialization, Navigation Compose. Every UI component gets a `@Preview` fed by JSON fixtures.
+- Code, comments, README and commit messages in **English**. The agent answers in the user's language.
+- Commits: small, imperative mood (`Add voltage tolerance to search_actuators`). One verified step per commit.
+- No new dependencies without saying why in the PR/commit message.
+
+---
+
+## Testing
+
+- Every change ships with tests. Do not finish a task with failing tests, and never delete or skip a test to make the suite pass.
+- Test levels:
+  1. **Ingestion**: row counts, N/A rows, CSA flags, in-lb vs Nm consistency, hand-verified spot values (the human fills these from the PDF; never invent expected values).
+  2. **Tools**: normalization, partial matches, filters, tolerance, filter relaxation; no LLM.
+  3. **API**: contract, multi-turn follow-up, persistence across app restart, error format; `LLM_PROVIDER=fake`.
+  4. **Agent evaluation**: `eval/cases.yaml`; expected values are generated from `data/processed/catalog.json`, never typed by hand.
+- When a manual check reveals a bug, add a regression test or an eval case before fixing it.
+
+---
+
+## How to work in this repo
+
+- Start non-trivial tasks in plan mode: list files to touch, approach, and tests. Wait for approval before writing code.
+- Keep changes scoped to the current phase/task. Do not refactor unrelated code.
+- If a requirement in this file conflicts with a request, stop and ask.
+- If you are unsure about a data value, check the PDF or `catalog.json`; never guess.
+- After finishing a task, summarize: what changed, how it was verified, and any open questions.
+
+## Definition of done (per task)
+
+- [ ] Tests added/updated and passing (`make test`, `make lint`).
+- [ ] No catalog numbers outside `data/` and generated fixtures.
+- [ ] No secrets, no reads of `.env`, no paid LLM calls.
+- [ ] `docs/design.md` / ADR / README updated if behavior or contract changed.
+- [ ] `docker compose up` from a clean state still works.
