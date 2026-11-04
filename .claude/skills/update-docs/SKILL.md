@@ -22,7 +22,7 @@ Gather this before reading any doc:
 
 | Item | Where to look |
 | --- | --- |
-| Env vars | `backend/app/core/settings.py`, `docker-compose.yml`, `android/local.properties` usage |
+| Env vars | `backend/app/config.py`, `docker-compose.yml`, `android/local.properties` usage |
 | Make targets | `Makefile` |
 | Compose services, ports, volumes | `docker-compose.yml` |
 | Endpoints and response fields | FastAPI routers and response schemas in `backend/app/api/` (or `GET /openapi.json` if the API is running) |

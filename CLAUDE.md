@@ -37,6 +37,7 @@ backend/
                     (catalog, sessions, messages, tool_calls, llm_usage)
     services/       conversation service: load history, run agent, build products, validate, persist
     schemas/        Pydantic request/response models
+    config.py       settings (pydantic-settings); the single place env vars are read
   ingest/           ingest.py, tables.yaml (one spec per PDF table), validate.py
   data/raw/         source PDFs (do not edit)
   data/processed/   actuators.csv, catalog.json (generated; committed)
