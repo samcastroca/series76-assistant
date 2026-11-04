@@ -1,0 +1,12 @@
+{
+  "enabledPlugins": {
+    "pyright-lsp@claude-plugins-official": true,
+    "kotlin-lsp@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true
+  },
+  "permissions": {
+    "deny": ["Read(./.env)", "Read(./**/.env)", "Bash(make eval-full:*)"],
+    "allow": ["Bash(uv run pytest:*)", "Bash(make test:*)", "Bash(docker compose:*)"]
+  }
+}
