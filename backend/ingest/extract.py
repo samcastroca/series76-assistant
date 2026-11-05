@@ -25,10 +25,13 @@ from ingest.spec import Spec, TableSpec, load_spec
 PDF_PATH = Path(__file__).resolve().parents[1] / "data" / "raw" / "series_76_electric_data.pdf"
 RESOLUTION_DPI = 300
 RUNS = 2
-# Free-tier Gemini often answers 429/503 under load; the SDK default gives up after ~15 s.
-RETRY_ATTEMPTS = 8
-RETRY_INITIAL_DELAY_S = 5.0
+# Free-tier Gemini answers 503 under load; the SDK default gives up after ~15 s. 429 is not
+# retried: on the free tier it usually means the daily request quota is spent, and retrying
+# only burns more of it. Few attempts with long waits keep the request count low.
+RETRY_ATTEMPTS = 4
+RETRY_INITIAL_DELAY_S = 15.0
 RETRY_MAX_DELAY_S = 120.0
+RETRY_STATUS_CODES = [408, 500, 502, 503, 504]
 
 # (prompt, png bytes, JSON schema) -> JSON text
 Generate = Callable[[str, bytes, dict], str]
@@ -118,6 +121,7 @@ def gemini_generate(model: str, api_key: str) -> Generate:
         attempts=RETRY_ATTEMPTS,
         initial_delay=RETRY_INITIAL_DELAY_S,
         max_delay=RETRY_MAX_DELAY_S,
+        http_status_codes=RETRY_STATUS_CODES,
     )
     client = genai.Client(api_key=api_key, http_options=types.HttpOptions(retry_options=retry))
 
