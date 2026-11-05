@@ -15,6 +15,7 @@ from ingest.extract import (
     generator_from_settings,
     json_schema,
     openrouter_payload,
+    portable_schema,
     run_extract,
 )
 from ingest.extracted import ExtractedTable, column_key, row_columns
@@ -143,7 +144,7 @@ def test_openrouter_payload_sends_image_prompt_and_strict_schema() -> None:
     assert text == {"type": "text", "text": "the prompt"}
     fmt = payload["response_format"]
     assert fmt["type"] == "json_schema" and fmt["json_schema"]["strict"] is True
-    assert fmt["json_schema"]["schema"] == schema
+    assert fmt["json_schema"]["schema"] == portable_schema(schema)
     assert payload["provider"] == {"require_parameters": True}
 
 
@@ -165,3 +166,19 @@ def test_openrouter_uses_its_own_key_never_openrouter_api_key(monkeypatch) -> No
 def test_google_provider_needs_google_key() -> None:
     with pytest.raises(SystemExit, match="GOOGLE_API_KEY"):
         generator_from_settings(Settings(ingest_llm_model="m", google_api_key=None))
+
+
+def test_portable_schema_is_plain_but_same_shape() -> None:
+    strict = json_schema(SPEC, TABLE)
+    plain = portable_schema(strict)
+    text = json.dumps(plain)
+    for keyword in ("$ref", "$defs", "anyOf", "additionalProperties", "title", "null"):
+        assert keyword not in text
+    rows = plain["properties"]["rows"]
+    assert rows["minItems"] == rows["maxItems"] == TABLE.expected_rows
+    row = rows["items"]
+    assert list(row["properties"]) == [column_key(t) for t in row_columns(SPEC, TABLE)]
+    assert row["required"] == list(row["properties"])
+    assert {p["type"] for p in row["properties"].values()} == {"string"}
+    group = plain["properties"]["motor_power_groups"]["items"]
+    assert set(group["required"]) == {"watts", "first_part_number", "last_part_number"}

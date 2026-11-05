@@ -89,8 +89,8 @@ Rules:
   the rows it spans (merged cells are delimited by horizontal rules). Rows printed as N/A have
   no Motor Power.
 - `caption`: the caption printed just above the table header.
-- If a cell is empty, use null. If a cell is hard to read, give your best reading; a human
-  reviews every disagreement.
+- If a cell is empty, use an empty string "". If a cell is hard to read, give your best
+  reading; a human reviews every disagreement.
 """
 
 
@@ -99,6 +99,34 @@ def json_schema(spec: Spec, table: TableSpec) -> dict:
     schema["properties"]["rows"]["minItems"] = table.expected_rows
     schema["properties"]["rows"]["maxItems"] = table.expected_rows
     return schema
+
+
+def portable_schema(schema: dict) -> dict:
+    """The same shape in the plain subset every structured-output backend accepts (Gemini behind
+    OpenRouter rejects `$ref`, `anyOf` with null, `additionalProperties`): refs inlined, nullable
+    strings as strings, no titles. The response is still validated locally against the strict
+    Pydantic schema, so nothing is lost."""
+    defs = schema.get("$defs", {})
+
+    def walk(node: object) -> object:
+        if isinstance(node, list):
+            return [walk(n) for n in node]
+        if not isinstance(node, dict):
+            return node
+        if "$ref" in node:
+            return walk(defs[node["$ref"].rsplit("/", 1)[-1]])
+        if "anyOf" in node:
+            options = [o for o in node["anyOf"] if o.get("type") != "null"]
+            if len(options) == 1:
+                rest = {k: v for k, v in node.items() if k != "anyOf"}
+                return walk(rest | options[0])
+        return {
+            k: walk(v)
+            for k, v in node.items()
+            if k not in ("$defs", "title", "additionalProperties")
+        }
+
+    return walk(schema)
 
 
 def extract_table(generate: Generate, spec: Spec, table: TableSpec, png: bytes) -> ExtractionRun:
@@ -162,7 +190,11 @@ def openrouter_payload(model: str, prompt: str, png: bytes, schema: dict) -> dic
         ],
         "response_format": {
             "type": "json_schema",
-            "json_schema": {"name": "table_extraction", "strict": True, "schema": schema},
+            "json_schema": {
+                "name": "table_extraction",
+                "strict": True,
+                "schema": portable_schema(schema),
+            },
         },
         # Route only to endpoints that honour response_format.
         "provider": {"require_parameters": True},
