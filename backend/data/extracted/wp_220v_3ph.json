@@ -1,0 +1,360 @@
+{
+  "table_id": "wp_220v_3ph",
+  "page": 2,
+  "model": "openrouter:google/gemini-3.8-flash-20260902",
+  "extracted_at": "2026-11-05T19:44:10+00:00",
+  "runs": [
+    {
+      "caption": "220V - 3 Phase Power",
+      "rows": [
+        {
+          "part_number": "761A00-11330C00/A",
+          "unspecified_torque_inlb": "N/A",
+          "unspecified_torque_nm": "N/A",
+          "unspecified_duty_cycle_pct": "N/A",
+          "unspecified_cycles_per_hour": "N/A",
+          "unspecified_starts_per_hour": "N/A",
+          "hz60_speed_s": "N/A",
+          "hz50_speed_s": "N/A",
+          "hz60_fla_a": "N/A",
+          "hz50_fla_a": "N/A",
+          "hz60_lra_a": "N/A",
+          "hz50_lra_a": "N/A"
+        },
+        {
+          "part_number": "761B00-11330C00/A",
+          "unspecified_torque_inlb": "N/A",
+          "unspecified_torque_nm": "N/A",
+          "unspecified_duty_cycle_pct": "N/A",
+          "unspecified_cycles_per_hour": "N/A",
+          "unspecified_starts_per_hour": "N/A",
+          "hz60_speed_s": "N/A",
+          "hz50_speed_s": "N/A",
+          "hz60_fla_a": "N/A",
+          "hz50_fla_a": "N/A",
+          "hz60_lra_a": "N/A",
+          "hz50_lra_a": "N/A"
+        },
+        {
+          "part_number": "762A00-11330C00/A",
+          "unspecified_torque_inlb": "N/A",
+          "unspecified_torque_nm": "N/A",
+          "unspecified_duty_cycle_pct": "N/A",
+          "unspecified_cycles_per_hour": "N/A",
+          "unspecified_starts_per_hour": "N/A",
+          "hz60_speed_s": "N/A",
+          "hz50_speed_s": "N/A",
+          "hz60_fla_a": "N/A",
+          "hz50_fla_a": "N/A",
+          "hz60_lra_a": "N/A",
+          "hz50_lra_a": "N/A"
+        },
+        {
+          "part_number": "762B00-11330C00/A",
+          "unspecified_torque_inlb": "N/A",
+          "unspecified_torque_nm": "N/A",
+          "unspecified_duty_cycle_pct": "N/A",
+          "unspecified_cycles_per_hour": "N/A",
+          "unspecified_starts_per_hour": "N/A",
+          "hz60_speed_s": "N/A",
+          "hz50_speed_s": "N/A",
+          "hz60_fla_a": "N/A",
+          "hz50_fla_a": "N/A",
+          "hz60_lra_a": "N/A",
+          "hz50_lra_a": "N/A"
+        },
+        {
+          "part_number": "763A00-11330C00/A",
+          "unspecified_torque_inlb": "2,650",
+          "unspecified_torque_nm": "300",
+          "unspecified_duty_cycle_pct": "70",
+          "unspecified_cycles_per_hour": "39",
+          "unspecified_starts_per_hour": "1200",
+          "hz60_speed_s": "26",
+          "hz50_speed_s": "32",
+          "hz60_fla_a": "1.0",
+          "hz50_fla_a": "1.0",
+          "hz60_lra_a": "1.2",
+          "hz50_lra_a": "1.2"
+        },
+        {
+          "part_number": "763B00-11330C00/A",
+          "unspecified_torque_inlb": "4,400",
+          "unspecified_torque_nm": "500",
+          "unspecified_duty_cycle_pct": "70",
+          "unspecified_cycles_per_hour": "39",
+          "unspecified_starts_per_hour": "1200",
+          "hz60_speed_s": "26",
+          "hz50_speed_s": "32",
+          "hz60_fla_a": "2.0",
+          "hz50_fla_a": "2.0",
+          "hz60_lra_a": "2.4",
+          "hz50_lra_a": "2.4"
+        },
+        {
+          "part_number": "763C00-11330C00/A",
+          "unspecified_torque_inlb": "5,300",
+          "unspecified_torque_nm": "600",
+          "unspecified_duty_cycle_pct": "70",
+          "unspecified_cycles_per_hour": "32",
+          "unspecified_starts_per_hour": "1200",
+          "hz60_speed_s": "32",
+          "hz50_speed_s": "39",
+          "hz60_fla_a": "2.0",
+          "hz50_fla_a": "2.0",
+          "hz60_lra_a": "2.4",
+          "hz50_lra_a": "2.4"
+        },
+        {
+          "part_number": "764A00-11330C00/A",
+          "unspecified_torque_inlb": "7,080",
+          "unspecified_torque_nm": "800",
+          "unspecified_duty_cycle_pct": "70",
+          "unspecified_cycles_per_hour": "36",
+          "unspecified_starts_per_hour": "1200",
+          "hz60_speed_s": "29",
+          "hz50_speed_s": "35",
+          "hz60_fla_a": "3.4",
+          "hz50_fla_a": "3.4",
+          "hz60_lra_a": "4.0",
+          "hz50_lra_a": "4.0"
+        },
+        {
+          "part_number": "764B00-11330C00/A",
+          "unspecified_torque_inlb": "10,600",
+          "unspecified_torque_nm": "1,200",
+          "unspecified_duty_cycle_pct": "70",
+          "unspecified_cycles_per_hour": "29",
+          "unspecified_starts_per_hour": "1200",
+          "hz60_speed_s": "36",
+          "hz50_speed_s": "43",
+          "hz60_fla_a": "3.4",
+          "hz50_fla_a": "3.4",
+          "hz60_lra_a": "4.0",
+          "hz50_lra_a": "4.0"
+        },
+        {
+          "part_number": "765A00-11330C00/A",
+          "unspecified_torque_inlb": "17,700",
+          "unspecified_torque_nm": "2,000",
+          "unspecified_duty_cycle_pct": "50",
+          "unspecified_cycles_per_hour": "8",
+          "unspecified_starts_per_hour": "1200",
+          "hz60_speed_s": "88",
+          "hz50_speed_s": "105",
+          "hz60_fla_a": "3.4",
+          "hz50_fla_a": "3.4",
+          "hz60_lra_a": "4.0",
+          "hz50_lra_a": "4.0"
+        },
+        {
+          "part_number": "765B00-11330C00/A",
+          "unspecified_torque_inlb": "26,500",
+          "unspecified_torque_nm": "3,000",
+          "unspecified_duty_cycle_pct": "50",
+          "unspecified_cycles_per_hour": "6",
+          "unspecified_starts_per_hour": "1200",
+          "hz60_speed_s": "108",
+          "hz50_speed_s": "130",
+          "hz60_fla_a": "3.4",
+          "hz50_fla_a": "3.4",
+          "hz60_lra_a": "4.0",
+          "hz50_lra_a": "4.0"
+        }
+      ],
+      "motor_power_groups": [
+        {
+          "watts": "40",
+          "first_part_number": "763A00-11330C00/A",
+          "last_part_number": "763A00-11330C00/A"
+        },
+        {
+          "watts": "90",
+          "first_part_number": "763B00-11330C00/A",
+          "last_part_number": "763C00-11330C00/A"
+        },
+        {
+          "watts": "180",
+          "first_part_number": "764A00-11330C00/A",
+          "last_part_number": "765B00-11330C00/A"
+        }
+      ]
+    },
+    {
+      "caption": "220V - 3 Phase Power",
+      "rows": [
+        {
+          "part_number": "761A00-11330C00/A",
+          "unspecified_torque_inlb": "N/A",
+          "unspecified_torque_nm": "N/A",
+          "unspecified_duty_cycle_pct": "N/A",
+          "unspecified_cycles_per_hour": "N/A",
+          "unspecified_starts_per_hour": "N/A",
+          "hz60_speed_s": "N/A",
+          "hz50_speed_s": "N/A",
+          "hz60_fla_a": "N/A",
+          "hz50_fla_a": "N/A",
+          "hz60_lra_a": "N/A",
+          "hz50_lra_a": "N/A"
+        },
+        {
+          "part_number": "761B00-11330C00/A",
+          "unspecified_torque_inlb": "N/A",
+          "unspecified_torque_nm": "N/A",
+          "unspecified_duty_cycle_pct": "N/A",
+          "unspecified_cycles_per_hour": "N/A",
+          "unspecified_starts_per_hour": "N/A",
+          "hz60_speed_s": "N/A",
+          "hz50_speed_s": "N/A",
+          "hz60_fla_a": "N/A",
+          "hz50_fla_a": "N/A",
+          "hz60_lra_a": "N/A",
+          "hz50_lra_a": "N/A"
+        },
+        {
+          "part_number": "762A00-11330C00/A",
+          "unspecified_torque_inlb": "N/A",
+          "unspecified_torque_nm": "N/A",
+          "unspecified_duty_cycle_pct": "N/A",
+          "unspecified_cycles_per_hour": "N/A",
+          "unspecified_starts_per_hour": "N/A",
+          "hz60_speed_s": "N/A",
+          "hz50_speed_s": "N/A",
+          "hz60_fla_a": "N/A",
+          "hz50_fla_a": "N/A",
+          "hz60_lra_a": "N/A",
+          "hz50_lra_a": "N/A"
+        },
+        {
+          "part_number": "762B00-11330C00/A",
+          "unspecified_torque_inlb": "N/A",
+          "unspecified_torque_nm": "N/A",
+          "unspecified_duty_cycle_pct": "N/A",
+          "unspecified_cycles_per_hour": "N/A",
+          "unspecified_starts_per_hour": "N/A",
+          "hz60_speed_s": "N/A",
+          "hz50_speed_s": "N/A",
+          "hz60_fla_a": "N/A",
+          "hz50_fla_a": "N/A",
+          "hz60_lra_a": "N/A",
+          "hz50_lra_a": "N/A"
+        },
+        {
+          "part_number": "763A00-11330C00/A",
+          "unspecified_torque_inlb": "2,650",
+          "unspecified_torque_nm": "300",
+          "unspecified_duty_cycle_pct": "70",
+          "unspecified_cycles_per_hour": "39",
+          "unspecified_starts_per_hour": "1200",
+          "hz60_speed_s": "26",
+          "hz50_speed_s": "32",
+          "hz60_fla_a": "1.0",
+          "hz50_fla_a": "1.0",
+          "hz60_lra_a": "1.2",
+          "hz50_lra_a": "1.2"
+        },
+        {
+          "part_number": "763B00-11330C00/A",
+          "unspecified_torque_inlb": "4,400",
+          "unspecified_torque_nm": "500",
+          "unspecified_duty_cycle_pct": "70",
+          "unspecified_cycles_per_hour": "39",
+          "unspecified_starts_per_hour": "1200",
+          "hz60_speed_s": "26",
+          "hz50_speed_s": "32",
+          "hz60_fla_a": "2.0",
+          "hz50_fla_a": "2.0",
+          "hz60_lra_a": "2.4",
+          "hz50_lra_a": "2.4"
+        },
+        {
+          "part_number": "763C00-11330C00/A",
+          "unspecified_torque_inlb": "5,300",
+          "unspecified_torque_nm": "600",
+          "unspecified_duty_cycle_pct": "70",
+          "unspecified_cycles_per_hour": "32",
+          "unspecified_starts_per_hour": "1200",
+          "hz60_speed_s": "32",
+          "hz50_speed_s": "39",
+          "hz60_fla_a": "2.0",
+          "hz50_fla_a": "2.0",
+          "hz60_lra_a": "2.4",
+          "hz50_lra_a": "2.4"
+        },
+        {
+          "part_number": "764A00-11330C00/A",
+          "unspecified_torque_inlb": "7,080",
+          "unspecified_torque_nm": "800",
+          "unspecified_duty_cycle_pct": "70",
+          "unspecified_cycles_per_hour": "36",
+          "unspecified_starts_per_hour": "1200",
+          "hz60_speed_s": "29",
+          "hz50_speed_s": "35",
+          "hz60_fla_a": "3.4",
+          "hz50_fla_a": "3.4",
+          "hz60_lra_a": "4.0",
+          "hz50_lra_a": "4.0"
+        },
+        {
+          "part_number": "764B00-11330C00/A",
+          "unspecified_torque_inlb": "10,600",
+          "unspecified_torque_nm": "1,200",
+          "unspecified_duty_cycle_pct": "70",
+          "unspecified_cycles_per_hour": "29",
+          "unspecified_starts_per_hour": "1200",
+          "hz60_speed_s": "36",
+          "hz50_speed_s": "43",
+          "hz60_fla_a": "3.4",
+          "hz50_fla_a": "3.4",
+          "hz60_lra_a": "4.0",
+          "hz50_lra_a": "4.0"
+        },
+        {
+          "part_number": "765A00-11330C00/A",
+          "unspecified_torque_inlb": "17,700",
+          "unspecified_torque_nm": "2,000",
+          "unspecified_duty_cycle_pct": "50",
+          "unspecified_cycles_per_hour": "8",
+          "unspecified_starts_per_hour": "1200",
+          "hz60_speed_s": "88",
+          "hz50_speed_s": "105",
+          "hz60_fla_a": "3.4",
+          "hz50_fla_a": "3.4",
+          "hz60_lra_a": "4.0",
+          "hz50_lra_a": "4.0"
+        },
+        {
+          "part_number": "765B00-11330C00/A",
+          "unspecified_torque_inlb": "26,500",
+          "unspecified_torque_nm": "3,000",
+          "unspecified_duty_cycle_pct": "50",
+          "unspecified_cycles_per_hour": "6",
+          "unspecified_starts_per_hour": "1200",
+          "hz60_speed_s": "108",
+          "hz50_speed_s": "130",
+          "hz60_fla_a": "3.4",
+          "hz50_fla_a": "3.4",
+          "hz60_lra_a": "4.0",
+          "hz50_lra_a": "4.0"
+        }
+      ],
+      "motor_power_groups": [
+        {
+          "watts": "40",
+          "first_part_number": "763A00-11330C00/A",
+          "last_part_number": "763A00-11330C00/A"
+        },
+        {
+          "watts": "90",
+          "first_part_number": "763B00-11330C00/A",
+          "last_part_number": "763C00-11330C00/A"
+        },
+        {
+          "watts": "180",
+          "first_part_number": "764A00-11330C00/A",
+          "last_part_number": "765B00-11330C00/A"
+        }
+      ]
+    }
+  ]
+}

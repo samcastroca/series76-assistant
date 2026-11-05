@@ -9,4 +9,11 @@
 #                                 last_part_number: "..."}]}
 # Column keys: part_number, on_off_torque_inlb, modulating_starts_per_hour, hz60_fla_a,
 # single_lra_a, ... (see the layouts in ingest/tables.yaml: "<group>.<field>" -> "<group>_<field>").
-[]
+- table: xp_220v_1ph
+  field: motor_power_groups
+  reason: "PDF p.4: 764X30 is in the 180 W merged cell"
+  value:
+    - {watts: "15", first_part_number: "761X30-11320000/A", last_part_number: "761Y30-11320000/A"}
+    - {watts: "40", first_part_number: "762X30-11320000/A", last_part_number: "763X30-11320000/A"}
+    - {watts: "90", first_part_number: "763Y30-11320000/A", last_part_number: "763Y30-11320000/A"}
+    - {watts: "180", first_part_number: "764X30-11320000/A", last_part_number: "765Y30-11320000/A"}

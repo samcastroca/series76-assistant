@@ -1,0 +1,132 @@
+{
+  "table_id": "xp_24v_on_off",
+  "page": 3,
+  "model": "openrouter:google/gemini-3.8-flash-20260902",
+  "extracted_at": "2026-11-05T19:44:42+00:00",
+  "runs": [
+    {
+      "caption": "24V AC/DC Power - On/Off",
+      "rows": [
+        {
+          "part_number": "761X30-11380000/A",
+          "on_off_torque_inlb": "620",
+          "on_off_torque_nm": "70",
+          "on_off_duty_cycle_pct": "30",
+          "on_off_cycles_per_hour": "350",
+          "single_speed_s": "17",
+          "single_fla_a": "5.0",
+          "single_lra_a": "12.8"
+        },
+        {
+          "part_number": "761Y30-11380000/A",
+          "on_off_torque_inlb": "700",
+          "on_off_torque_nm": "80",
+          "on_off_duty_cycle_pct": "30",
+          "on_off_cycles_per_hour": "300",
+          "single_speed_s": "20",
+          "single_fla_a": "6.3",
+          "single_lra_a": "12.8"
+        },
+        {
+          "part_number": "762X30-11380000/A",
+          "on_off_torque_inlb": "1,350",
+          "on_off_torque_nm": "150",
+          "on_off_duty_cycle_pct": "40",
+          "on_off_cycles_per_hour": "200",
+          "single_speed_s": "22",
+          "single_fla_a": "6.0",
+          "single_lra_a": "16.9"
+        },
+        {
+          "part_number": "762Y30-11380000/A",
+          "on_off_torque_inlb": "1,410",
+          "on_off_torque_nm": "160",
+          "on_off_duty_cycle_pct": "40",
+          "on_off_cycles_per_hour": "200",
+          "single_speed_s": "22",
+          "single_fla_a": "7.4",
+          "single_lra_a": "16.9"
+        },
+        {
+          "part_number": "763X30-11380000/A",
+          "on_off_torque_inlb": "2,120",
+          "on_off_torque_nm": "240",
+          "on_off_duty_cycle_pct": "35",
+          "on_off_cycles_per_hour": "160",
+          "single_speed_s": "32",
+          "single_fla_a": "8.9",
+          "single_lra_a": "30.8"
+        }
+      ],
+      "motor_power_groups": [
+        {
+          "watts": "40",
+          "first_part_number": "761X30-11380000/A",
+          "last_part_number": "763X30-11380000/A"
+        }
+      ]
+    },
+    {
+      "caption": "24V AC/DC Power - On/Off",
+      "rows": [
+        {
+          "part_number": "761X30-11380000/A",
+          "on_off_torque_inlb": "620",
+          "on_off_torque_nm": "70",
+          "on_off_duty_cycle_pct": "30",
+          "on_off_cycles_per_hour": "350",
+          "single_speed_s": "17",
+          "single_fla_a": "5.0",
+          "single_lra_a": "12.8"
+        },
+        {
+          "part_number": "761Y30-11380000/A",
+          "on_off_torque_inlb": "700",
+          "on_off_torque_nm": "80",
+          "on_off_duty_cycle_pct": "30",
+          "on_off_cycles_per_hour": "300",
+          "single_speed_s": "20",
+          "single_fla_a": "6.3",
+          "single_lra_a": "12.8"
+        },
+        {
+          "part_number": "762X30-11380000/A",
+          "on_off_torque_inlb": "1,350",
+          "on_off_torque_nm": "150",
+          "on_off_duty_cycle_pct": "40",
+          "on_off_cycles_per_hour": "200",
+          "single_speed_s": "22",
+          "single_fla_a": "6.0",
+          "single_lra_a": "16.9"
+        },
+        {
+          "part_number": "762Y30-11380000/A",
+          "on_off_torque_inlb": "1,410",
+          "on_off_torque_nm": "160",
+          "on_off_duty_cycle_pct": "40",
+          "on_off_cycles_per_hour": "200",
+          "single_speed_s": "22",
+          "single_fla_a": "7.4",
+          "single_lra_a": "16.9"
+        },
+        {
+          "part_number": "763X30-11380000/A",
+          "on_off_torque_inlb": "2,120",
+          "on_off_torque_nm": "240",
+          "on_off_duty_cycle_pct": "35",
+          "on_off_cycles_per_hour": "160",
+          "single_speed_s": "32",
+          "single_fla_a": "8.9",
+          "single_lra_a": "30.8"
+        }
+      ],
+      "motor_power_groups": [
+        {
+          "watts": "40",
+          "first_part_number": "761X30-11380000/A",
+          "last_part_number": "763X30-11380000/A"
+        }
+      ]
+    }
+  ]
+}
