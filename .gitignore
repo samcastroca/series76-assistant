@@ -3,3 +3,7 @@ assessment-en.pdf
 
 # Secrets
 .env
+
+# Python
+__pycache__/
+.venv/

@@ -1,0 +1,36 @@
+[project]
+name = "series76-backend"
+version = "0.1.0"
+description = "Series 76 technical assistant backend"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "sqlalchemy[asyncio]>=2.0.16",
+    "asyncpg",
+    "alembic",
+    "pydantic>=2",
+    "pydantic-settings",
+    "pyyaml",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "ruff",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = ["."]
+asyncio_default_fixture_loop_scope = "function"
+markers = ["db: requires the Postgres service from docker compose"]

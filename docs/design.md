@@ -30,35 +30,41 @@ Tres tablas normalizadas, porque el torque depende del tipo de servicio y la vel
 
 ```sql
 CREATE TABLE actuators (
-  part_number     TEXT PRIMARY KEY,   -- '763B00-11320000/A'
-  part_key        TEXT UNIQUE,        -- normalizado: '763B001132000A'
-  series_size     INT,                -- 3
-  variant         TEXT,               -- 'B'
-  enclosure       TEXT,               -- 'weatherproof' | 'explosionproof'
-  certifications  TEXT[],             -- texto tal cual de la tabla
-  csa_certified   BOOLEAN,            -- false para tamaños 6 y 7 (*)
-  voltage_v       INT,                -- 24 | 110 | 220
-  phase           INT,                -- 1 | 3 | NULL (24V)
-  current_type    TEXT,               -- 'AC' | 'DC' | 'AC/DC'
-  motor_power_w   INT,
-  data_available  BOOLEAN,            -- false en filas N/A
-  source_table    TEXT, source_page INT
-);
+  part_number         TEXT PRIMARY KEY,   -- '763B00-11320000/A' (sin '*')
+  part_key            TEXT UNIQUE,        -- normalizado: '763B0011320000A'
+  series_size         SMALLINT,           -- 3 (CHECK 1..7)
+  variant             TEXT,               -- 'B' (CHECK A|B|C|X|Y)
+  enclosure           TEXT,               -- 'weatherproof' | 'explosionproof'
+  certifications      TEXT[],             -- {CSA,CE,UKCA}; {CE,UKCA} en tamaños 6 y 7; {CSA} en XP
+  csa_certified       BOOLEAN,            -- false para tamaños 6 y 7 (*)
+  hazardous_locations TEXT[],             -- clases de las notas XP; NULL en weatherproof
+  voltage_v           SMALLINT,           -- 24 | 110 | 220
+  phase               SMALLINT,           -- 1 | 3 | NULL (exactamente en 24V)
+  current_type        TEXT,               -- 'AC' | 'DC' | 'AC/DC'
+  motor_power_w       INT,                -- NULL en filas N/A
+  data_available      BOOLEAN,            -- false en filas N/A
+  source_table        TEXT, source_page SMALLINT
+);  -- + índice GIN pg_trgm sobre part_key
 
 CREATE TABLE service_ratings (
-  part_number     TEXT REFERENCES actuators,
+  part_number     TEXT REFERENCES actuators ON DELETE CASCADE,
   service_type    TEXT,  -- 'on_off' | 'modulating' | 'unspecified' (trifásico)
-  torque_inlb     INT, torque_nm INT,
-  duty_cycle_pct  INT, cycles_per_hour INT, starts_per_hour INT,
+  torque_inlb     INT, torque_nm INT, duty_cycle_pct SMALLINT,
+  cycles_per_hour INT,   -- on_off y unspecified
+  starts_per_hour INT,   -- modulating y unspecified
   PRIMARY KEY (part_number, service_type)
 );
 
 CREATE TABLE electrical_ratings (
-  part_number     TEXT REFERENCES actuators,
-  frequency_hz    INT,   -- 60 | 50 | NULL en 24V
-  speed_s INT, fla_a NUMERIC(5,2), lra_a NUMERIC(5,2)
+  id              INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  part_number     TEXT REFERENCES actuators ON DELETE CASCADE,
+  frequency_hz    SMALLINT,   -- 60 | 50 | NULL en 24V
+  speed_s INT, fla_a NUMERIC(5,2), lra_a NUMERIC(5,2),
+  UNIQUE NULLS NOT DISTINCT (part_number, frequency_hz)
 );
 ```
+
+Los conjuntos cerrados son `CHECK`, no tipos `ENUM` de Postgres. Las filas N/A solo existen en `actuators`: no tienen filas en `service_ratings` ni en `electrical_ratings`, así que un `LEFT JOIN` las devuelve con todas las specs a `NULL`. Ver `docs/adr/0001-catalog-schema.md`.
 
 **Decisiones de modelado que conviene defender:**
 
