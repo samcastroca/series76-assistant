@@ -122,7 +122,7 @@ def discrepancies_markdown(discrepancies: list[Discrepancy], part_numbers: dict)
     lines = [
         "# Extraction discrepancies",
         "",
-        "Cells where the two Gemini runs disagree. Check each one against the PDF and add",
+        "Cells where the two vision runs disagree. Check each one against the PDF and add",
         "an entry to `data/corrections.yaml`; `build` refuses to run until every cell here",
         "is covered.",
         "",

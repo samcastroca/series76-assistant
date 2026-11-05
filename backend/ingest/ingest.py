@@ -1,6 +1,6 @@
 """Ingest CLI: `python -m ingest.ingest {extract|build|load}`.
 
-- extract: Gemini vision over the scanned PDF -> data/extracted/ (human-run only, network).
+- extract: vision model over the scanned PDF -> data/extracted/ (human-run only, network).
 - build:   data/extracted/ + data/corrections.yaml -> data/processed/ (deterministic, offline).
 - load:    data/processed/catalog.json -> Postgres upsert (deterministic).
 """
