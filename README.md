@@ -14,8 +14,9 @@ The catalog tables in the source PDF are treated as structured data in PostgreSQ
 for retrieval. A LangChain agent reads that data only through typed tools, and the app renders
 every spec straight from the tool output. No number the user sees is written by the LLM.
 
-- **Ingestion** extracts the 7 tables (68 part numbers) with a declarative spec per table,
-  validates them and loads them into Postgres.
+- **Ingestion** turns the 7 tables (68 part numbers) into validated rows in Postgres. The data
+  PDF is a scan, so the tables are read once with Gemini vision and the raw output is committed;
+  everything after that is deterministic ([ADR 0002](docs/adr/0002-vision-extraction.md)).
 - **The agent** (LangChain v1 `create_agent`) has three tools: look up a part number, search by
   requirements, and list the available catalog options. Filtering, ranking and voltage
   tolerance are deterministic Python.
@@ -52,6 +53,22 @@ docker compose up --build   # Postgres + migrations + ingestion (if empty) + API
 Configuration goes in `.env`, starting from `.env.example`. The LLM is chosen with
 `LLM_PROVIDER` (`openrouter`, `google` or `fake`) and the models with `AGENT_MODEL` and
 `FALLBACK_MODEL`. `LLM_PROVIDER=fake` runs the full flow with real tools and no LLM cost.
+
+### Ingestion
+
+```bash
+cd backend
+uv run python -m ingest.ingest build   # data/extracted + corrections.yaml -> data/processed (offline)
+uv run python -m ingest.ingest load    # data/processed/catalog.json -> Postgres (idempotent upsert)
+
+# Only when re-reading the PDF (human-run, free Google AI Studio key; never the OpenRouter key):
+uv sync --group extract
+uv run --env-file ../.env python -m ingest.ingest extract   # needs GOOGLE_API_KEY, INGEST_LLM_MODEL
+```
+
+`extract` runs Gemini twice per table and writes the cells where the runs disagree to
+`data/extracted/discrepancies.md`. Each one is checked against the PDF and fixed in
+`data/corrections.yaml`; `build` refuses to run until every disagreement is covered.
 
 ## Repository layout
 
