@@ -1,0 +1,12 @@
+# Human-reviewed fixes for cells in data/extracted/<table>.json (first run).
+# Every cell listed in data/extracted/discrepancies.md needs an entry here, or `build` fails.
+# Values are typed by a human from the PDF, as printed (e.g. "1,330"), never from memory.
+#
+# Cell:               - {table: <table id>, row: <1-based row>, field: <column key>,
+#                        value: "<as printed>", reason: "<why>"}
+# Motor Power groups: - {table: <table id>, field: motor_power_groups, reason: "<why>",
+#                        value: [{watts: "<as printed>", first_part_number: "...",
+#                                 last_part_number: "..."}]}
+# Column keys: part_number, on_off_torque_inlb, modulating_starts_per_hour, hz60_fla_a,
+# single_lra_a, ... (see the layouts in ingest/tables.yaml: "<group>.<field>" -> "<group>_<field>").
+[]
