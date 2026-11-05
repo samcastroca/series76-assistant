@@ -1,0 +1,168 @@
+# Declarative spec of the 7 tables in data/raw/series_76_electric_data.pdf.
+# Structure and metadata only: no catalog values (torque, current, speed, power, duty cycle).
+#
+# Each layout maps extracted columns, by position, to a target:
+#   actuator.<field>      column of `actuators`
+#   <service>.<field>     row of `service_ratings` (on_off | modulating | unspecified)
+#   hz60/hz50.<field>     row of `electrical_ratings` at 60/50 Hz
+#   single.<field>        row of `electrical_ratings` with frequency_hz NULL (24 V tables)
+
+layouts:
+  ac_1ph_dual_service:
+    - actuator.part_number
+    - on_off.torque_inlb
+    - on_off.torque_nm
+    - on_off.duty_cycle_pct
+    - on_off.cycles_per_hour
+    - modulating.torque_inlb
+    - modulating.torque_nm
+    - modulating.duty_cycle_pct
+    - modulating.starts_per_hour
+    - hz60.speed_s
+    - hz50.speed_s
+    - hz60.fla_a
+    - hz50.fla_a
+    - hz60.lra_a
+    - hz50.lra_a
+    - actuator.motor_power_w  # merged cell: filled down within its row group
+  ac_3ph_single_torque:
+    - actuator.part_number
+    - unspecified.torque_inlb
+    - unspecified.torque_nm
+    - unspecified.duty_cycle_pct
+    - unspecified.cycles_per_hour
+    - unspecified.starts_per_hour
+    - hz60.speed_s
+    - hz50.speed_s
+    - hz60.fla_a
+    - hz50.fla_a
+    - hz60.lra_a
+    - hz50.lra_a
+    - actuator.motor_power_w
+  dc_24v_on_off:
+    - actuator.part_number
+    - on_off.torque_inlb
+    - on_off.torque_nm
+    - on_off.duty_cycle_pct
+    - on_off.cycles_per_hour
+    - single.speed_s
+    - single.fla_a
+    - single.lra_a
+    - actuator.motor_power_w
+  dc_24v_modulating:
+    - actuator.part_number
+    - modulating.torque_inlb
+    - modulating.torque_nm
+    - modulating.duty_cycle_pct
+    - modulating.starts_per_hour
+    - single.speed_s
+    - single.fla_a
+    - single.lra_a
+    - actuator.motor_power_w
+
+defaults:
+  weatherproof:
+    certifications: [CSA, CE, UKCA]
+  explosionproof:
+    certifications: [CSA]
+    # Table notes, pages 3-4 (page 3 prints "GRoups"; normalized to "Groups").
+    hazardous_locations:
+      - "Class I, Division 1, Groups C, D; T4"
+      - "Ex d IIB T4 Gb"
+      - "Class I, Zone 1, AEx d IIB T4 Gb"
+
+tables:
+  - id: wp_110v_1ph
+    page: 1
+    index: 0  # order of the table on its page
+    title: "110V - Single Phase Power"  # checked against the caption above the table
+    enclosure: weatherproof
+    voltage_v: 110
+    phase: 1
+    current_type: AC
+    services: [on_off, modulating]
+    layout: ac_1ph_dual_service
+    part_suffix: "-11300000/A"
+    expected_rows: 11
+
+  - id: wp_220v_1ph
+    page: 1
+    index: 1
+    title: "220V - Single Phase Power"
+    enclosure: weatherproof
+    voltage_v: 220
+    phase: 1
+    current_type: AC
+    services: [on_off, modulating]
+    layout: ac_1ph_dual_service
+    part_suffix: "-11320000/A"
+    expected_rows: 16
+    markers:
+      # "* Sizes 6 and 7 are not CSA Certified"
+      "*": {csa_certified: false, remove_certifications: [CSA]}
+
+  - id: wp_220v_3ph
+    page: 2
+    index: 0
+    title: "220V - 3 Phase Power"
+    enclosure: weatherproof
+    voltage_v: 220
+    phase: 3
+    current_type: AC
+    services: [unspecified]  # single torque column: no on/off vs modulating split
+    layout: ac_3ph_single_torque
+    part_suffix: "-11330C00/A"
+    expected_rows: 11
+    expected_na_rows: 4
+
+  - id: xp_24v_on_off
+    page: 3
+    index: 0
+    title: "24V AC/DC Power - On/Off"
+    enclosure: explosionproof
+    voltage_v: 24
+    phase: null
+    current_type: AC/DC
+    services: [on_off]
+    layout: dc_24v_on_off
+    part_suffix: "-11380000/A"
+    expected_rows: 5
+
+  - id: xp_24v_modulating
+    page: 3
+    index: 1
+    title: "24V DC Power - Modulating"
+    enclosure: explosionproof
+    voltage_v: 24
+    phase: null
+    current_type: DC
+    services: [modulating]
+    layout: dc_24v_modulating
+    part_suffix: "-11370000/A"
+    expected_rows: 5
+
+  - id: xp_110v_1ph
+    page: 4
+    index: 0
+    title: "110V - Single Phase Power"
+    enclosure: explosionproof
+    voltage_v: 110
+    phase: 1
+    current_type: AC
+    services: [on_off, modulating]
+    layout: ac_1ph_dual_service
+    part_suffix: "-11300000/A"
+    expected_rows: 10
+
+  - id: xp_220v_1ph
+    page: 4
+    index: 1
+    title: "220V - Single Phase Power"
+    enclosure: explosionproof
+    voltage_v: 220
+    phase: 1
+    current_type: AC
+    services: [on_off, modulating]
+    layout: ac_1ph_dual_service
+    part_suffix: "-11320000/A"
+    expected_rows: 10
