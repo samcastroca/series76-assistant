@@ -15,12 +15,19 @@ from ingest.build import DATA_DIR, BuildError, run_build
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m ingest.ingest", description=__doc__)
     parser.add_argument("stage", choices=["extract", "build", "load"])
+    parser.add_argument(
+        "--force", action="store_true", help="extract: re-read tables already in data/extracted/"
+    )
     args = parser.parse_args(argv)
 
     if args.stage == "extract":
-        from ingest.extract import run_extract
+        from ingest.extract import ExtractError, run_extract
 
-        diffs = run_extract(DATA_DIR / "extracted")
+        try:
+            diffs = run_extract(DATA_DIR / "extracted", force=args.force)
+        except ExtractError as exc:
+            print(exc, file=sys.stderr)
+            return 1
         print(f"{len(diffs)} discrepancies -> data/extracted/discrepancies.md")
     elif args.stage == "build":
         try:

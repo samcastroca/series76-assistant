@@ -25,6 +25,10 @@ from ingest.spec import Spec, TableSpec, load_spec
 PDF_PATH = Path(__file__).resolve().parents[1] / "data" / "raw" / "series_76_electric_data.pdf"
 RESOLUTION_DPI = 300
 RUNS = 2
+# Free-tier Gemini often answers 429/503 under load; the SDK default gives up after ~15 s.
+RETRY_ATTEMPTS = 8
+RETRY_INITIAL_DELAY_S = 5.0
+RETRY_MAX_DELAY_S = 120.0
 
 # (prompt, png bytes, JSON schema) -> JSON text
 Generate = Callable[[str, bytes, dict], str]
@@ -110,7 +114,12 @@ def gemini_generate(model: str, api_key: str) -> Generate:
     from google import genai
     from google.genai import types
 
-    client = genai.Client(api_key=api_key)
+    retry = types.HttpRetryOptions(
+        attempts=RETRY_ATTEMPTS,
+        initial_delay=RETRY_INITIAL_DELAY_S,
+        max_delay=RETRY_MAX_DELAY_S,
+    )
+    client = genai.Client(api_key=api_key, http_options=types.HttpOptions(retry_options=retry))
 
     def generate(prompt: str, png: bytes, schema: dict) -> str:
         response = client.models.generate_content(
@@ -127,42 +136,67 @@ def gemini_generate(model: str, api_key: str) -> Generate:
     return generate
 
 
+class ExtractError(Exception):
+    pass
+
+
 def run_extract(
     out_dir: Path,
     generate: Generate | None = None,
     model: str | None = None,
     pages: dict[int, bytes] | None = None,
     spec: Spec | None = None,
+    force: bool = False,
 ) -> list:
-    """Extracts every table twice and writes the raw runs and the discrepancy sheet."""
+    """Extracts every table twice and writes the raw runs and the discrepancy sheet.
+
+    Resumable: a table whose file already exists is kept (and only diffed) unless `force`, so a
+    failure halfway through does not repeat the tables already read."""
     spec = spec or load_spec()
-    if generate is None:
+    pending = [t for t in spec.tables if force or not (out_dir / f"{t.id}.json").exists()]
+    if pending and generate is None:
         settings = get_settings()
         if not settings.ingest_llm_model or settings.google_api_key is None:
             raise SystemExit("extract needs INGEST_LLM_MODEL and GOOGLE_API_KEY in the environment")
         model = settings.ingest_llm_model
         generate = gemini_generate(model, settings.google_api_key.get_secret_value())
-    pages = pages if pages is not None else render_pages()
+    if pending and pages is None:
+        pages = render_pages()
 
     out_dir.mkdir(parents=True, exist_ok=True)
     all_diffs = []
     labels: dict[tuple[str, int], str] = {}
     for table in spec.tables:
-        runs = [extract_table(generate, spec, table, pages[table.page]) for _ in range(RUNS)]
-        extracted = ExtractedTable(
-            table_id=table.id,
-            page=table.page,
-            model=model or "unknown",
-            extracted_at=datetime.now(UTC).isoformat(timespec="seconds"),
-            runs=runs,
-        )
-        (out_dir / f"{table.id}.json").write_text(
-            extracted.model_dump_json(indent=2) + "\n", encoding="utf-8", newline="\n"
-        )
-        all_diffs += diff_runs(table.id, *runs)
-        for i, row in enumerate(runs[0].rows, start=1):
+        path = out_dir / f"{table.id}.json"
+        if table in pending:
+            try:
+                runs = [
+                    extract_table(generate, spec, table, pages[table.page]) for _ in range(RUNS)
+                ]
+            except Exception as exc:
+                done = len(spec.tables) - len(pending) + pending.index(table)
+                raise ExtractError(
+                    f"{table.id} failed: {exc}\n{done} table(s) are saved in {out_dir}; "
+                    "run `extract` again to resume from this table."
+                ) from exc
+            extracted = ExtractedTable(
+                table_id=table.id,
+                page=table.page,
+                model=model or "unknown",
+                extracted_at=datetime.now(UTC).isoformat(timespec="seconds"),
+                runs=runs,
+            )
+            text = extracted.model_dump_json(indent=2) + "\n"
+            path.write_text(text, encoding="utf-8", newline="\n")
+            status = "extracted"
+        else:
+            extracted = ExtractedTable.model_validate_json(path.read_text("utf-8"))
+            status = "kept (use --force to re-extract)"
+        diffs = diff_runs(table.id, *extracted.runs)
+        all_diffs += diffs
+        for i, row in enumerate(extracted.runs[0].rows, start=1):
             labels[(table.id, i)] = row.get("part_number") or ""
-        print(f"{table.id}: {len(runs[0].rows)} rows, {len(diff_runs(table.id, *runs))} diffs")
+        print(f"{table.id}: {status}, {len(extracted.runs[0].rows)} rows, {len(diffs)} diffs")
     (out_dir / "discrepancies.md").write_text(
         discrepancies_markdown(all_diffs, labels), encoding="utf-8", newline="\n"
     )
