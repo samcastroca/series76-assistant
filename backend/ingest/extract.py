@@ -95,10 +95,9 @@ Rules:
 
 
 def json_schema(spec: Spec, table: TableSpec) -> dict:
-    schema = run_schema(spec, table).model_json_schema()
-    schema["properties"]["rows"]["minItems"] = table.expected_rows
-    schema["properties"]["rows"]["maxItems"] = table.expected_rows
-    return schema
+    """No minItems/maxItems on `rows`: Google AI Studio answers 400 INVALID_ARGUMENT to them
+    (bisected through OpenRouter). The row count is in the prompt and `build` checks it."""
+    return run_schema(spec, table).model_json_schema()
 
 
 def portable_schema(schema: dict) -> dict:

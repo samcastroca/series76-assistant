@@ -44,10 +44,10 @@ def test_prompt_names_the_table_and_every_column() -> None:
     assert "motor_power_w" not in prompt
 
 
-def test_schema_pins_row_count_and_forbids_extra_keys() -> None:
+def test_schema_has_no_item_limits_and_forbids_extra_keys() -> None:
     schema = json_schema(SPEC, TABLE)
-    assert schema["properties"]["rows"]["minItems"] == TABLE.expected_rows
-    assert schema["properties"]["rows"]["maxItems"] == TABLE.expected_rows
+    # Google AI Studio rejects minItems/maxItems with 400 INVALID_ARGUMENT (regression).
+    assert "minItems" not in json.dumps(schema) and "maxItems" not in json.dumps(schema)
     row_def = next(d for name, d in schema["$defs"].items() if name == "Row")
     assert row_def["additionalProperties"] is False
 
@@ -68,7 +68,7 @@ def test_run_extract_writes_two_runs_and_discrepancies(tmp_path: Path) -> None:
         # every cell differently.
         keys = list(schema["$defs"]["Row"]["properties"])
         cell = "2" if len(calls) == 2 else "1"
-        rows = [{k: cell for k in keys} for _ in range(schema["properties"]["rows"]["minItems"])]
+        rows = [{k: cell for k in keys} for _ in range(_table_in(prompt).expected_rows)]
         caption = next(t.title for t in SPEC.tables if f'"{t.title}"' in prompt)
         return json.dumps({"caption": caption, "rows": rows, "motor_power_groups": []})
 
@@ -88,9 +88,15 @@ def test_gemini_sdk_not_imported() -> None:
     assert "google.genai" not in sys.modules
 
 
+def _table_in(prompt: str):
+    return next(
+        t for t in SPEC.tables if f'"{t.title}"' in prompt and f"{t.expected_rows} part" in prompt
+    )
+
+
 def _schema_answer(prompt: str, schema: dict, cell: str = "1") -> str:
     keys = list(schema["$defs"]["Row"]["properties"])
-    rows = [{k: cell for k in keys} for _ in range(schema["properties"]["rows"]["minItems"])]
+    rows = [{k: cell for k in keys} for _ in range(_table_in(prompt).expected_rows)]
     caption = next(t.title for t in SPEC.tables if f'"{t.title}"' in prompt)
     return json.dumps({"caption": caption, "rows": rows, "motor_power_groups": []})
 
@@ -175,7 +181,6 @@ def test_portable_schema_is_plain_but_same_shape() -> None:
     for keyword in ("$ref", "$defs", "anyOf", "additionalProperties", "title", "null"):
         assert keyword not in text
     rows = plain["properties"]["rows"]
-    assert rows["minItems"] == rows["maxItems"] == TABLE.expected_rows
     row = rows["items"]
     assert list(row["properties"]) == [column_key(t) for t in row_columns(SPEC, TABLE)]
     assert row["required"] == list(row["properties"])
