@@ -79,11 +79,11 @@ Los conjuntos cerrados son `CHECK`, no tipos `ENUM` de Postgres. Las filas N/A s
 El PDF de datos es un escaneo (cada página es una imagen), así que `pdfplumber` no extrae ninguna celda y un OCR local comete demasiados errores. La extracción se hace con visión y queda aislada en una etapa offline cuyo resultado se versiona. Ver `docs/adr/0002-vision-extraction.md`.
 
 1. **Especificación declarativa por tabla** (`tables.yaml`): página, encapsulado, voltaje, fase, tipo de corriente, servicios presentes y mapeo de columnas. Son solo 7 tablas, así que esto es más robusto que inferir la estructura.
-2. **`extract`** (manual, solo la ejecuta el humano, con red): `pdfplumber` rasteriza cada página a 300 dpi y Gemini visión (`INGEST_LLM_MODEL`, Google AI Studio, `temperature=0`) devuelve cada tabla en un esquema JSON estricto generado desde el layout. Las celdas se copian tal cual se imprimen; las celdas combinadas de Motor Power se devuelven como rangos de filas. Se ejecuta dos veces: ambas salidas se guardan en `data/extracted/<tabla>.json` y el diff celda a celda en `data/extracted/discrepancies.md`.
+2. **`extract`** (manual, solo la ejecuta el humano, con red): `pdfplumber` rasteriza cada página a 300 dpi y un modelo de visión (`INGEST_LLM_PROVIDER` = `google` con Gemini en Google AI Studio, u `openrouter` con su propia clave `INGEST_OPENROUTER_API_KEY`; modelo en `INGEST_LLM_MODEL`, `temperature=0`) devuelve cada tabla en un esquema JSON estricto generado desde el layout. Las celdas se copian tal cual se imprimen; las celdas combinadas de Motor Power se devuelven como rangos de filas. Se ejecuta dos veces: ambas salidas se guardan en `data/extracted/<tabla>.json` y el diff celda a celda en `data/extracted/discrepancies.md`.
 3. **`build`** (determinista, sin red): lee `data/extracted/` y `data/corrections.yaml` (correcciones revisadas por el humano contra el PDF; obligatorias para cada celda que difiere entre las dos ejecuciones). Limpia separadores de miles, asteriscos y letras en negrita partidas; propaga Motor Power sobre su rango; marca las filas `N/A`; deriva `series_size`, `variant` y `part_key` del part number.
 4. **Validación** con Pydantic y chequeos cruzados: tipos, sufijo del part number según la tabla, variante según el encapsulado, 68 part numbers únicos, filas por tabla, filas N/A, in-lb vs Nm (factor 8,85, tolerancia 5 %, porque algunos pares impresos se desvían 2–4 %) y FLA ≤ LRA (hay filas impresas con FLA = LRA).
 5. **Salida revisable:** `data/processed/actuators.csv` y `catalog.json`, versionados en el repo y reproducibles byte a byte.
-6. **`load`:** carga idempotente en Postgres (upsert) desde `catalog.json`, ejecutada al arrancar con Docker Compose si la base está vacía. Docker y los tests nunca llaman a Gemini.
+6. **`load`:** carga idempotente en Postgres (upsert) desde `catalog.json`, ejecutada al arrancar con Docker Compose si la base está vacía. Docker y los tests nunca llaman al modelo de visión.
 
 **Tests de ingesta:** 68 part numbers; 4 sin datos; 5 sin CSA; y unos 10 valores verificados a mano. Por ejemplo, `765Y30-11300000/A` da 25,900 in-lb on/off y `763C00-11330C00/A` da 5,300 in-lb.
 
@@ -210,7 +210,7 @@ Un solo modelo económico con buen tool calling para el agente basta, porque el 
 | --- | --- | --- | --- |
 | Agente (tool calling + redacción) | `AGENT_MODEL` | Tool calling fiable, bajo costo por token, buen español | Familias tipo Gemini Flash, GPT mini o Claude Haiku |
 | Respaldo si el principal falla | `FALLBACK_MODEL` | Proveedor distinto | Otro de la lista anterior |
-| Extracción por visión del PDF escaneado (solo desarrollo, la ejecuta el humano) | `INGEST_LLM_MODEL` | Gratis; se ejecuta pocas veces y su salida se versiona | Gemini vía Google AI Studio |
+| Extracción por visión del PDF escaneado (solo desarrollo, la ejecuta el humano) | `INGEST_LLM_PROVIDER`, `INGEST_LLM_MODEL` | Visión con salida estructurada; se ejecuta pocas veces y su salida se versiona | Gemini vía Google AI Studio (gratis, 20 peticiones/día por modelo) u OpenRouter con clave propia |
 | Transcripción de voz (opcional) | — | Sin costo | Reconocimiento de voz del dispositivo |
 
 Decisión: no se usan embeddings ni pgvector. Los datos son 68 filas con campos tipados, y la búsqueda por filtros es exacta y explicable. pgvector solo tendría sentido para el texto del summary, que cabe completo en el prompt.

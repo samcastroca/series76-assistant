@@ -7,7 +7,16 @@ from pathlib import Path
 import pydantic
 import pytest
 
-from ingest.extract import ExtractError, build_prompt, extract_table, json_schema, run_extract
+from app.config import Settings
+from ingest.extract import (
+    ExtractError,
+    build_prompt,
+    extract_table,
+    generator_from_settings,
+    json_schema,
+    openrouter_payload,
+    run_extract,
+)
 from ingest.extracted import ExtractedTable, column_key, row_columns
 from ingest.spec import load_spec
 
@@ -120,3 +129,39 @@ def test_run_extract_resumes_after_a_failure(tmp_path: Path) -> None:
         force=True,
     )
     assert len(calls) == 2 * len(SPEC.tables)
+
+
+# --- provider selection --------------------------------------------------------------------
+
+
+def test_openrouter_payload_sends_image_prompt_and_strict_schema() -> None:
+    schema = json_schema(SPEC, TABLE)
+    payload = openrouter_payload("vendor/model", "the prompt", b"\x89PNG", schema)
+    assert payload["model"] == "vendor/model" and payload["temperature"] == 0
+    image, text = payload["messages"][0]["content"]
+    assert image["image_url"]["url"].startswith("data:image/png;base64,")
+    assert text == {"type": "text", "text": "the prompt"}
+    fmt = payload["response_format"]
+    assert fmt["type"] == "json_schema" and fmt["json_schema"]["strict"] is True
+    assert fmt["json_schema"]["schema"] == schema
+    assert payload["provider"] == {"require_parameters": True}
+
+
+def test_openrouter_uses_its_own_key_never_openrouter_api_key(monkeypatch) -> None:
+    monkeypatch.setenv("OPENROUTER_API_KEY", "agent-key")
+    settings = Settings(ingest_llm_provider="openrouter", ingest_llm_model="vendor/model")
+    with pytest.raises(SystemExit, match="INGEST_OPENROUTER_API_KEY"):
+        generator_from_settings(settings)
+
+    settings = Settings(
+        ingest_llm_provider="openrouter",
+        ingest_llm_model="vendor/model",
+        ingest_openrouter_api_key="ingest-key",
+    )
+    label, generate = generator_from_settings(settings)
+    assert label == "openrouter:vendor/model" and callable(generate)
+
+
+def test_google_provider_needs_google_key() -> None:
+    with pytest.raises(SystemExit, match="GOOGLE_API_KEY"):
+        generator_from_settings(Settings(ingest_llm_model="m", google_api_key=None))

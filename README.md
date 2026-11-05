@@ -15,7 +15,7 @@ for retrieval. A LangChain agent reads that data only through typed tools, and t
 every spec straight from the tool output. No number the user sees is written by the LLM.
 
 - **Ingestion** turns the 7 tables (68 part numbers) into validated rows in Postgres. The data
-  PDF is a scan, so the tables are read once with Gemini vision and the raw output is committed;
+  PDF is a scan, so the tables are read once with a vision model and the raw output is committed;
   everything after that is deterministic ([ADR 0002](docs/adr/0002-vision-extraction.md)).
 - **The agent** (LangChain v1 `create_agent`) has three tools: look up a part number, search by
   requirements, and list the available catalog options. Filtering, ranking and voltage
@@ -61,12 +61,12 @@ cd backend
 uv run python -m ingest.ingest build   # data/extracted + corrections.yaml -> data/processed (offline)
 uv run python -m ingest.ingest load    # data/processed/catalog.json -> Postgres (idempotent upsert)
 
-# Only when re-reading the PDF (human-run, free Google AI Studio key; never the OpenRouter key):
-uv sync --group extract
-uv run --env-file ../.env python -m ingest.ingest extract   # needs GOOGLE_API_KEY, INGEST_LLM_MODEL
+# Only when re-reading the PDF (human-run). INGEST_LLM_PROVIDER=google needs GOOGLE_API_KEY;
+# INGEST_LLM_PROVIDER=openrouter needs INGEST_OPENROUTER_API_KEY (not the agent's key).
+uv run --group extract --env-file ../.env python -m ingest.ingest extract
 ```
 
-`extract` runs Gemini twice per table and writes the cells where the runs disagree to
+`extract` runs the vision model twice per table and writes the cells where the runs disagree to
 `data/extracted/discrepancies.md`. Each one is checked against the PDF and fixed in
 `data/corrections.yaml`; `build` refuses to run until every disagreement is covered.
 

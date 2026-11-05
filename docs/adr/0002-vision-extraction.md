@@ -16,9 +16,9 @@ need a human review of every table.
 Ingestion is split into three stages (`python -m ingest.ingest {extract|build|load}`):
 
 1. **`extract`** (offline, network, run by a human only). `pdfplumber` renders each page at
-   300 dpi and Gemini vision (Google AI Studio, model from `INGEST_LLM_MODEL`, `temperature=0`)
-   extracts each table into a strict per-table JSON schema generated from `tables.yaml`. Cells
-   are copied as printed (strings). Merged Motor Power cells are returned as explicit row ranges.
+   300 dpi and a vision model (`INGEST_LLM_MODEL`, `temperature=0`) extracts each table into a
+   strict per-table JSON schema generated from `tables.yaml`. Cells are copied as printed
+   (strings). Merged Motor Power cells are returned as explicit row ranges.
    Each table is extracted twice; both runs are committed in `data/extracted/<table>.json` and a
    cell-by-cell diff goes to `data/extracted/discrepancies.md`.
 2. **`build`** (deterministic, no network). Reads `data/extracted/` (first run) plus the
@@ -41,9 +41,14 @@ Ingestion is split into three stages (`python -m ingest.ingest {extract|build|lo
 
 ## Consequences
 
-- `pdfplumber` and `google-genai` live in an optional `extract` dependency group; the API image
-  does not need them.
+- `pdfplumber`, `google-genai` and `httpx` live in an optional `extract` dependency group; the
+  API image does not need them.
 - Re-extracting (new model, new PDF) is a reviewed change: new JSON, new diff, new corrections.
-- The previous "optional cross-validation with Gemini" step disappears: Gemini is now the
-  extractor, and the cross-checks plus the human review are the validation.
-- `OPENROUTER_API_KEY` is never used for ingestion.
+- The previous "optional cross-validation with Gemini" step disappears: the vision model is
+  now the extractor, and the cross-checks plus the human review are the validation.
+- Provider is chosen with `INGEST_LLM_PROVIDER`: `google` (Gemini through Google AI Studio,
+  `GOOGLE_API_KEY`) or `openrouter` (any vision model with structured outputs,
+  `INGEST_OPENROUTER_API_KEY`). OpenRouter was added because the AI Studio free tier allows 20
+  requests per model per day and was returning 503 under load; a full extraction is 14 requests.
+  Its key is separate from `OPENROUTER_API_KEY`, which belongs to the agent and the paid
+  evaluation and is never read by ingestion. The stored `model` field records `provider:model`.

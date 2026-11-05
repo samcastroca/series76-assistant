@@ -1,16 +1,19 @@
-"""`extract` stage (human-run, network): Gemini vision over the scanned data PDF.
+"""`extract` stage (human-run, network): vision LLM over the scanned data PDF.
 
-Renders each page with pdfplumber, asks Gemini for each table twice under a strict JSON schema
-generated from tables.yaml, and writes the raw runs to data/extracted/<table_id>.json plus a
-cell-by-cell diff to data/extracted/discrepancies.md. Nothing else in the project calls this
-module: Docker and the tests only use `build` and `load`. See docs/adr/0002."""
+Renders each page with pdfplumber, asks the vision model (Gemini through Google AI Studio, or
+any vision model through OpenRouter, per INGEST_LLM_PROVIDER) for each table twice under a
+strict JSON schema generated from tables.yaml, and writes the raw runs to
+data/extracted/<table_id>.json plus a cell-by-cell diff to data/extracted/discrepancies.md.
+Nothing else in the project calls this module: Docker and the tests only use `build` and
+`load`. See docs/adr/0002."""
 
+import base64
 import io
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
-from app.config import get_settings
+from app.config import Settings, get_settings
 from ingest.extracted import (
     ExtractedTable,
     ExtractionRun,
@@ -32,6 +35,9 @@ RETRY_ATTEMPTS = 4
 RETRY_INITIAL_DELAY_S = 15.0
 RETRY_MAX_DELAY_S = 120.0
 RETRY_STATUS_CODES = [408, 500, 502, 503, 504]
+
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_TIMEOUT_S = 300.0
 
 # (prompt, png bytes, JSON schema) -> JSON text
 Generate = Callable[[str, bytes, dict], str]
@@ -140,6 +146,64 @@ def gemini_generate(model: str, api_key: str) -> Generate:
     return generate
 
 
+def openrouter_payload(model: str, prompt: str, png: bytes, schema: dict) -> dict:
+    image = "data:image/png;base64," + base64.b64encode(png).decode("ascii")
+    return {
+        "model": model,
+        "temperature": 0,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": image}},
+                    {"type": "text", "text": prompt},
+                ],
+            }
+        ],
+        "response_format": {
+            "type": "json_schema",
+            "json_schema": {"name": "table_extraction", "strict": True, "schema": schema},
+        },
+        # Route only to endpoints that honour response_format.
+        "provider": {"require_parameters": True},
+    }
+
+
+def openrouter_generate(model: str, api_key: str) -> Generate:
+    import httpx
+
+    client = httpx.Client(
+        timeout=OPENROUTER_TIMEOUT_S, headers={"Authorization": f"Bearer {api_key}"}
+    )
+
+    def generate(prompt: str, png: bytes, schema: dict) -> str:
+        response = client.post(OPENROUTER_URL, json=openrouter_payload(model, prompt, png, schema))
+        if response.is_error:
+            raise RuntimeError(f"OpenRouter {response.status_code}: {response.text[:500]}")
+        data = response.json()
+        if "error" in data:
+            raise RuntimeError(f"OpenRouter error: {data['error']}")
+        return data["choices"][0]["message"]["content"]
+
+    return generate
+
+
+def generator_from_settings(settings: Settings) -> tuple[str, Generate]:
+    """Returns the model label stored in data/extracted/ and the configured `generate`."""
+    model = settings.ingest_llm_model
+    if settings.ingest_llm_provider == "openrouter":
+        key = settings.ingest_openrouter_api_key
+        if not model or key is None:
+            raise SystemExit(
+                "extract with INGEST_LLM_PROVIDER=openrouter needs INGEST_LLM_MODEL and "
+                "INGEST_OPENROUTER_API_KEY in the environment"
+            )
+        return f"openrouter:{model}", openrouter_generate(model, key.get_secret_value())
+    if not model or settings.google_api_key is None:
+        raise SystemExit("extract needs INGEST_LLM_MODEL and GOOGLE_API_KEY in the environment")
+    return f"google:{model}", gemini_generate(model, settings.google_api_key.get_secret_value())
+
+
 class ExtractError(Exception):
     pass
 
@@ -159,11 +223,7 @@ def run_extract(
     spec = spec or load_spec()
     pending = [t for t in spec.tables if force or not (out_dir / f"{t.id}.json").exists()]
     if pending and generate is None:
-        settings = get_settings()
-        if not settings.ingest_llm_model or settings.google_api_key is None:
-            raise SystemExit("extract needs INGEST_LLM_MODEL and GOOGLE_API_KEY in the environment")
-        model = settings.ingest_llm_model
-        generate = gemini_generate(model, settings.google_api_key.get_secret_value())
+        model, generate = generator_from_settings(get_settings())
     if pending and pages is None:
         pages = render_pages()
 
