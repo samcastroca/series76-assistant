@@ -58,7 +58,7 @@ docker-compose.yml  .env.example  README.md
 ## Commands
 
 ```bash
-make up            # docker compose up --build (db + migrations + ingest if empty + api)
+make up            # docker compose up --build (db + migrations + idempotent catalog load + api)
 make down          # docker compose down
 make ingest        # ingest build + load (deterministic; never calls an LLM)
 # ingest extract    # vision LLM over the scanned PDF: HUMAN ONLY (INGEST_LLM_PROVIDER + its key)
