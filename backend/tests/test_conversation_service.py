@@ -119,6 +119,45 @@ async def test_provider_failure_keeps_the_user_message_and_its_trace(make_servic
     assert "ConnectionError" in messages[-1].payload["internal_error"]
 
 
+async def test_retry_after_failure_reuses_the_failed_user_message(make_service) -> None:
+    script = [lookup(), AIMessage("Listo."), lookup(), ConnectionError("down")]
+    service = make_service([*script, lookup(), AIMessage("Ahora sí.")])
+    first = await service.handle(None, "q")
+    with pytest.raises(LlmUnavailable):
+        await service.handle(first.session_id, "otra")
+    retried = await service.handle(first.session_id, "otra")
+
+    async with make_service.maker() as db:
+        messages = await repo.list_messages(db, first.session_id)
+        failed_trace = await repo.get_trace(db, messages[2].id)
+    assert [(m.role, m.status, m.content) for m in messages] == [
+        ("user", "ok", "q"),
+        ("assistant", "ok", "Listo."),
+        ("user", "ok", "otra"),
+        ("assistant", "ok", "Ahora sí."),
+    ]
+    assert messages[3].id == retried.message_id
+    assert "internal_error" not in messages[2].payload
+    assert len(failed_trace.tool_calls) == 1  # the failed attempt's cost is still recorded
+
+
+async def test_a_different_query_after_failure_keeps_the_failed_message(make_service) -> None:
+    script = [lookup(), AIMessage("Listo."), ConnectionError("down"), AIMessage("Otra cosa.")]
+    service = make_service(script)
+    first = await service.handle(None, "q")
+    with pytest.raises(LlmUnavailable):
+        await service.handle(first.session_id, "otra")
+    await service.handle(first.session_id, "distinta")
+
+    async with make_service.maker() as db:
+        messages = await repo.list_messages(db, first.session_id)
+    assert [(m.role, m.status) for m in messages][2:] == [
+        ("user", "error"),
+        ("user", "ok"),
+        ("assistant", "ok"),
+    ]
+
+
 async def test_unbacked_number_triggers_one_retry_with_a_note(make_service) -> None:
     notes: list[str] = []
 

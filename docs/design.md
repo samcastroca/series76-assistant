@@ -209,7 +209,7 @@ CREATE TABLE llm_usage (
 
 **Título de la sesión:** se genera a partir de la primera consulta sin llamar al LLM (por ejemplo, el part number detectado o los primeros 60 caracteres). Ahorra una llamada por conversación.
 
-**Consistencia:** el turno lee en una sesión corta, ejecuta el agente sin retener conexión y se guarda en una transacción al final (mensaje del usuario, tool calls, respuesta y uso). Si el LLM falla en una sesión existente, se guarda el mensaje del usuario con `status = 'error'` y su traza para que la app pueda reintentar; en una conversación nueva no se guarda nada, porque la respuesta 503 no puede devolver el `session_id`.
+**Consistencia:** el turno lee en una sesión corta, ejecuta el agente sin retener conexión y se guarda en una transacción al final (mensaje del usuario, tool calls, respuesta y uso). Si el LLM falla en una sesión existente, se guarda el mensaje del usuario con `status = 'error'` y su traza para que la app pueda reintentar; un reintento exitoso de la misma consulta reutiliza ese mensaje en lugar de duplicarlo; en una conversación nueva no se guarda nada, porque la respuesta 503 no puede devolver el `session_id`.
 
 ## Selección de modelos y presupuesto
 

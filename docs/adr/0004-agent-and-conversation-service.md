@@ -39,7 +39,8 @@ internals reach the chat, conversations survive a restart, and the paid key is u
   runs the agent with no connection held, and writes user message, answer, tool calls and usage
   in one transaction. Tools open their own short read-only sessions.
 - **Failures.** A provider error is a 503: in an existing session the user message is stored with
-  status `error` and the turn's trace; on a new conversation nothing is stored, because the 503
+  status `error` and the turn's trace (a successful retry of the same query reuses that message
+  instead of duplicating it); on a new conversation nothing is stored, because the 503
   body (fixed error shape) cannot return a session id. A call limit or an empty answer gives a
   fixed bilingual fallback answer with `response_type = "error"`; the detail is kept in
   `payload.internal_error`, which only the trace endpoint returns.

@@ -99,6 +99,27 @@ async def add_message(
     return message
 
 
+async def reuse_failed_user_message(
+    db: AsyncSession, session_id: uuid.UUID, query: str
+) -> Message | None:
+    """If the session's last message is this same query and it failed, mark it 'ok' and return
+    it: a retry then answers the stored message instead of adding a duplicate. Its trace (the
+    failed attempt's tool calls and usage) stays attached."""
+    stmt = (
+        select(Message)
+        .where(Message.session_id == session_id)
+        .order_by(Message.created_at.desc(), Message.role.asc())
+        .limit(1)
+    )
+    last = await db.scalar(stmt)
+    if last is None or (last.role, last.status, last.content) != ("user", "error", query):
+        return None
+    last.status = "ok"
+    last.payload = {}
+    await db.flush()
+    return last
+
+
 async def add_trace(
     db: AsyncSession,
     message_id: uuid.UUID,

@@ -7,7 +7,8 @@ transaction.
 
 - A provider failure raises LlmUnavailable (503). In an existing session the user message is
   stored with status 'error' (with the turn's tool calls and usage) so the app can show it and
-  retry; a new session is not created, since the 503 body cannot return its id.
+  retry; a successful retry of the same query reuses that message instead of duplicating it.
+  A new session is not created, since the 503 body cannot return its id.
 - A per-turn call limit or an empty answer returns a controlled 'error' answer; the internal
   detail goes to the trace only.
 - The call limits are per turn: the validator's retry shares the first run's budget."""
@@ -171,7 +172,9 @@ class ConversationService:
         async with self.sessionmaker() as db:
             if loaded.is_new:
                 await repo.create_session(db, loaded.title, loaded.session_id)
-            await repo.add_message(db, loaded.session_id, "user", query)
+                await repo.add_message(db, loaded.session_id, "user", query)
+            elif not await repo.reuse_failed_user_message(db, loaded.session_id, query):
+                await repo.add_message(db, loaded.session_id, "user", query)
             message = await repo.add_message(db, loaded.session_id, "assistant", answer, payload)
             await repo.add_trace(db, message.id, ctx.recorder.records, ctx.usage)
             parts = [p.part_number for p in view.products]
