@@ -15,7 +15,7 @@ from typing import Any
 # Table notes and fixed vocabulary: 50/60 Hz, ±10 % voltage, ±5 % frequency, series sizes 1-7.
 ALLOWLIST: frozenset[Decimal] = frozenset(Decimal(v) for v in (50, 60, 10, 5, 1, 2, 3, 4, 5, 6, 7))
 
-_PART_NUMBER = re.compile(r"(?<![0-9A-Za-z])76[1-7][A-CXYa-cxy][0-9A-Za-z]*(?:[-/][0-9A-Za-z]+)*")
+PART_NUMBER = re.compile(r"(?<![0-9A-Za-z])76[1-7][A-CXYa-cxy][0-9A-Za-z]*(?:[-/][0-9A-Za-z]+)*")
 _PRODUCT_NAME = re.compile(r"\bseries?\s+76\b", re.IGNORECASE)
 _NUMBER = re.compile(r"(?<![0-9A-Za-z])\d+(?:[.,]\d+)*")
 _UNIT = re.compile(
@@ -32,7 +32,7 @@ class NumberToken:
 
 
 def _mask(text: str) -> str:
-    for pattern in (_PART_NUMBER, _PRODUCT_NAME):
+    for pattern in (PART_NUMBER, _PRODUCT_NAME):
         text = pattern.sub(lambda m: " " * len(m.group()), text)
     return text
 
