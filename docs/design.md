@@ -119,7 +119,9 @@ La unidad de búsqueda es el par (actuador, tipo de servicio), porque el torque 
 2. **Prompt:** el LLM tiene instrucciones de no citar números fuera de las tools.
 3. **Verificación:** un validador extrae los números del `answer` y comprueba que existan en los resultados de tools del turno o de la sesión. Si alguno no aparece, se regenera una vez con un aviso; si persiste, se eliminan los números del texto y se remite a las tarjetas.
 
-**Contexto entre turnos:** el historial incluye los mensajes de tool. Además, la sesión guarda `active_parts` (los últimos part numbers mostrados), así "¿y cuánto consume?" se resuelve sin repetir el número. "Consume" se responde con Motor Power (W) y la FLA como contexto.
+**Contexto entre turnos:** el historial que recibe el modelo es solo el texto de los últimos turnos; los resultados de tools no se reenvían. La sesión guarda `active_parts` (los últimos part numbers mostrados) y `shown_parts`, que se inyectan en el system prompt, así "¿y cuánto consume?" se resuelve llamando de nuevo a la tool sin repetir números del historial. "Consume" se responde con Motor Power (W) y la FLA como contexto.
+
+**Middleware y límites:** prompt dinámico con los part numbers activos, registro de uso por llamada al modelo, `ModelCallLimitMiddleware` y `ToolCallLimitMiddleware` con `exit_behavior="error"`, registro de cada tool call (argumentos, resultado, latencia, error) con mensajes genéricos ante fallos, y `ModelFallbackMiddleware` si hay `FALLBACK_MODEL`. Los límites son por turno: el reintento del validador comparte el presupuesto. `response_type`, `products`, `clarification`, `highlight_fields`, `suggestions` y `warnings` se derivan en el backend de los resultados tipados de las tools. Ver `docs/adr/0004-agent-and-conversation-service.md`.
 
 ## API REST
 
@@ -150,9 +152,12 @@ POST /api/conversation
   ],
   "highlight_fields": ["torque", "speed_s"],
   "clarification": null,
-  "suggestions": []
+  "suggestions": [],
+  "warnings": []
 }
 ```
+
+Cada producto lleva además `series_size`, `variant`, `csa_certified`, `hazardous_locations`, `data_available`, `matched_service` (el servicio con el que coincidió una búsqueda), `meets_requirements` (`false` en las alternativas más cercanas) y `unmet`. `warnings` resume avisos del turno: `tolerance_applied`, `service_type_unspecified`, `not_csa_certified`, `no_published_data`, `multiple_filters_blocking`, `numbers_removed` y `tool_error`.
 
 `response_type` toma uno de estos valores: `detail`, `recommendation`, `comparison`, `clarification`, `no_match`, `not_found`, `no_data` o `error`. La app elige la vista según este campo. `clarification` lleva `{ question, options[] }` y la app lo muestra como chips.
 
@@ -166,9 +171,9 @@ POST /api/conversation
 | POST | `/api/auth/login` | Opcional: `{ email, password }` → `{ token }` |
 | GET | `/health` | Estado de la base de datos y configuración del LLM |
 
-Cambio respecto a lo sugerido: la traza vive en `/api/messages/{id}/trace` y no dentro de la respuesta del chat. Esto mantiene liviano el payload del usuario y permite proteger el debug con un header `X-Debug-Key` o activarlo solo con `DEBUG_API=true`.
+Cambio respecto a lo sugerido: la traza vive en `/api/messages/{id}/trace` y no dentro de la respuesta del chat. Esto mantiene liviano el payload del usuario. La ruta solo existe con `DEBUG_API=true`; si no, responde 404 y no aparece en `/docs`.
 
-Errores con un formato único `{ "error": { "code", "message" } }`: 400 para query vacía o demasiado larga, 404 para sesión inexistente y 503 cuando el proveedor LLM falla o se agota la key. Un fallo del LLM nunca deja la sesión a medias.
+Errores con un formato único `{ "error": { "code", "message" } }`: 400 (`empty_query`, `query_too_long`, `invalid_request`), 404 (`session_not_found`, `message_not_found`, `not_found`), 405 (`method_not_allowed`), 503 (`llm_unavailable`) cuando el proveedor LLM falla, y 500 (`internal_error`) sin detalles. Un fallo del LLM nunca deja la sesión a medias. `/health` es la excepción: es un informe de estado y devuelve su propio cuerpo también con 503 cuando la base no responde.
 
 ## Persistencia de conversaciones y trazas
 
@@ -181,28 +186,30 @@ CREATE TABLE sessions (
   state JSONB          -- { active_parts: [...], last_filters: {...} }
 );
 CREATE TABLE messages (
-  id UUID PRIMARY KEY, session_id UUID REFERENCES sessions,
+  id UUID PRIMARY KEY, session_id UUID REFERENCES sessions ON DELETE CASCADE,
   role TEXT,           -- 'user' | 'assistant'
   content TEXT,
-  payload JSONB,       -- products, response_type, clarification
+  payload JSONB,       -- products, response_type, clarification, warnings; internal_error (solo traza)
+  status TEXT,         -- 'ok' | 'error' (fallo del proveedor)
   created_at TIMESTAMPTZ
 );
 CREATE TABLE tool_calls (
-  id UUID PRIMARY KEY, message_id UUID REFERENCES messages,
-  seq INT, tool_name TEXT, args JSONB, result JSONB,
+  id UUID PRIMARY KEY, message_id UUID REFERENCES messages ON DELETE CASCADE,
+  seq SMALLINT, tool_name TEXT, args JSONB, result JSONB,
   latency_ms INT, error TEXT
 );
 CREATE TABLE llm_usage (
-  message_id UUID REFERENCES messages, model TEXT,
-  input_tokens INT, output_tokens INT, cost_usd NUMERIC(10,6)
+  id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  message_id UUID REFERENCES messages ON DELETE CASCADE, model TEXT,
+  input_tokens INT, output_tokens INT, cost_usd NUMERIC(10,6)  -- NULL si el proveedor no lo informa
 );
 ```
 
-**Reconstrucción del contexto en cada turno:** se cargan los últimos N turnos (configurable con `HISTORY_TURNS`, por defecto 10). Los resultados de tools antiguos se resumen como "se mostró el producto X" para no reenviar JSON grande. `state.active_parts` se inyecta en el prompt para resolver referencias como "ese" o "el segundo".
+**Reconstrucción del contexto en cada turno:** se cargan los últimos N turnos (configurable con `HISTORY_TURNS`, por defecto 10) como texto, sin los turnos fallidos. Los resultados de tools no se reenvían; `state.active_parts` y `state.shown_parts` se inyectan en el system prompt para resolver referencias como "ese" o "el segundo". El validador numérico sí usa los resultados de tools guardados de toda la sesión.
 
 **Título de la sesión:** se genera a partir de la primera consulta sin llamar al LLM (por ejemplo, el part number detectado o los primeros 60 caracteres). Ahorra una llamada por conversación.
 
-**Consistencia:** el turno se guarda en una transacción al final (mensaje del usuario, tool calls, respuesta y uso). Si el LLM falla, se guarda el mensaje del usuario con un estado de error para que la app pueda reintentar.
+**Consistencia:** el turno lee en una sesión corta, ejecuta el agente sin retener conexión y se guarda en una transacción al final (mensaje del usuario, tool calls, respuesta y uso). Si el LLM falla en una sesión existente, se guarda el mensaje del usuario con `status = 'error'` y su traza para que la app pueda reintentar; en una conversación nueva no se guarda nada, porque la respuesta 503 no puede devolver el `session_id`.
 
 ## Selección de modelos y presupuesto
 

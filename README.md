@@ -4,9 +4,8 @@ A technical assistant that helps plant engineers look up and select **Series 76 
 actuators**. Users ask in natural language (for example, "I need a weatherproof modulating
 actuator at 220 V") and get answers backed by the published catalog tables.
 
-> **Status: design phase.** The design and the agent rules are written; the backend, the
-> ingestion and the Android app are not implemented yet. The commands under
-> [Running it](#running-it) describe the target setup and will work once those parts land.
+> **Status:** the ingestion, the agent and the REST API run with `docker compose up`. The
+> Android app and the evaluation suite are not implemented yet.
 
 ## How it works
 
@@ -41,18 +40,69 @@ Jetpack Compose)
 
 ## Running it
 
-The target setup is one command for the whole backend:
+Requirements: Docker with Compose. For local development and tests also
+[uv](https://docs.astral.sh/uv/) (Python 3.12 is installed by uv) and `make`.
 
 ```bash
-docker compose up --build   # Postgres + migrations + ingestion (if empty) + API on :8000
+cp .env.example .env        # optional: the defaults run the fake LLM, no key needed
+docker compose up --build   # Postgres + migrations + catalog load + API on :8000
 ```
+
+On every start the `api` container runs `alembic upgrade head`, loads
+`backend/data/processed/catalog.json` (an idempotent upsert; no LLM involved) and starts uvicorn.
 
 - API: `http://localhost:8000` (interactive docs at `/docs`)
 - From the Android emulator: `http://10.0.2.2:8000`
 
-Configuration goes in `.env`, starting from `.env.example`. The LLM is chosen with
-`LLM_PROVIDER` (`openrouter`, `google` or `fake`) and the models with `AGENT_MODEL` and
-`FALLBACK_MODEL`. `LLM_PROVIDER=fake` runs the full flow with real tools and no LLM cost.
+```bash
+# New conversation
+curl -s -X POST localhost:8000/api/conversation \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "datos del 761A00-11300000/A"}'
+
+# Follow-up: reuse the session_id from the previous response
+curl -s -X POST localhost:8000/api/conversation \
+  -H 'Content-Type: application/json' \
+  -d '{"session_id": "<session_id>", "query": "and how much power does it draw?"}'
+```
+
+The response always has `session_id`, `message_id`, `answer` and `response_type`, plus
+`products` (the specs, built from the database), `highlight_fields`, `clarification`,
+`suggestions` and `warnings`. Errors use `{"error": {"code": ..., "message": ...}}`.
+
+| Method | Path | Use |
+| --- | --- | --- |
+| POST | `/api/conversation` | One chat turn |
+| GET | `/api/sessions` | Conversations, newest first |
+| GET | `/api/sessions/{id}/messages` | History with the products of each answer |
+| DELETE | `/api/sessions/{id}` | Delete a conversation |
+| GET | `/api/messages/{id}/trace` | Tool calls, model, tokens and cost (only with `DEBUG_API=true`) |
+| GET | `/health` | Database status and configured provider/models |
+
+### Configuration
+
+Settings come from environment variables (`.env` for Docker Compose). Model IDs are never
+hardcoded.
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `LLM_PROVIDER` | `fake` | `fake` (scripted model, real tools, no cost), `google` (free manual checks, uses `GOOGLE_API_KEY`) or `openrouter` (final validation, uses `OPENROUTER_API_KEY`) |
+| `AGENT_MODEL` / `FALLBACK_MODEL` | none | Model IDs as the provider names them; required for `google`/`openrouter` |
+| `LLM_MAX_TOKENS` | `600` | Output cap per model call (temperature is always 0) |
+| `LLM_TIMEOUT_S` | `60` | Provider request timeout |
+| `MODEL_CALL_LIMIT` / `TOOL_CALL_LIMIT` | `6` / `6` | Calls allowed per chat turn |
+| `HISTORY_TURNS` | `10` | Earlier turns sent to the model |
+| `MAX_QUERY_CHARS` | `1000` | Longest accepted query |
+| `DEBUG_API` | `false` | Mounts the trace endpoint for the app's Debug screen |
+| `DATABASE_URL` | local Postgres | Async SQLAlchemy URL (compose points it at the `db` service) |
+
+### Development
+
+```bash
+docker compose up -d db   # tests create throwaway databases on this server
+make test                 # backend tests, always with the fake LLM
+make lint                 # ruff check + format check
+```
 
 ### Ingestion
 

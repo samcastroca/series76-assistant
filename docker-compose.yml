@@ -15,5 +15,26 @@ services:
       timeout: 3s
       retries: 10
 
+  api:
+    build: ./backend
+    env_file:
+      - path: .env
+        required: false
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-series76}:${POSTGRES_PASSWORD:-series76}@db:5432/${POSTGRES_DB:-series76}
+      # fake by default: the full flow with real tools and no LLM cost.
+      LLM_PROVIDER: ${LLM_PROVIDER:-fake}
+      AGENT_MODEL: ${AGENT_MODEL:-}
+      FALLBACK_MODEL: ${FALLBACK_MODEL:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      DEBUG_API: ${DEBUG_API:-false}
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
 volumes:
   pgdata:
