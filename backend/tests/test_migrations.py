@@ -1,4 +1,5 @@
-"""The Alembic migrations build the catalog schema on a throwaway database and tear it down."""
+"""The Alembic migrations build the catalog and conversation schema on a throwaway database and
+tear it down."""
 
 import asyncio
 
@@ -13,12 +14,21 @@ pytestmark = pytest.mark.db
 TABLES_SQL = "SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename"
 
 
-def test_upgrade_creates_catalog_and_downgrade_removes_it(db_url) -> None:
+def test_upgrade_creates_all_tables_and_downgrade_removes_them(db_url) -> None:
     cfg = alembic_config(db_url)
     command.upgrade(cfg, "head")
 
     tables = [r["tablename"] for r in asyncio.run(fetch(db_url, TABLES_SQL))]
-    assert tables == ["actuators", "alembic_version", "electrical_ratings", "service_ratings"]
+    assert tables == [
+        "actuators",
+        "alembic_version",
+        "electrical_ratings",
+        "llm_usage",
+        "messages",
+        "service_ratings",
+        "sessions",
+        "tool_calls",
+    ]
     ext = asyncio.run(fetch(db_url, "SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm'"))
     assert ext
     idx = asyncio.run(

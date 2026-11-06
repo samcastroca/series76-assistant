@@ -1,7 +1,13 @@
 """Catalog tables: one row per part number, plus torque per service type and electrical data
-per frequency. NULL always means "not published"; it is never replaced with 0."""
+per frequency. NULL always means "not published"; it is never replaced with 0.
 
+Conversation tables: sessions, their messages, the tool calls behind each assistant message and
+the LLM usage of each turn. Deleting a session cascades to everything under it."""
+
+import uuid
+from datetime import datetime
 from decimal import Decimal
+from typing import Any
 
 from sqlalchemy import (
     ARRAY,
@@ -14,7 +20,9 @@ from sqlalchemy import (
     SmallInteger,
     Text,
     UniqueConstraint,
+    func,
 )
+from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 ENCLOSURES = ("weatherproof", "explosionproof")
@@ -24,6 +32,8 @@ VARIANTS = ("A", "B", "C", "X", "Y")
 VOLTAGES = (24, 110, 220)
 PHASES = (1, 3)
 FREQUENCIES = (50, 60)
+ROLES = ("user", "assistant")
+MESSAGE_STATUSES = ("ok", "error")
 
 
 def _in(column: str, values: tuple) -> str:
@@ -120,3 +130,69 @@ class ElectricalRating(Base):
             postgresql_nulls_not_distinct=True,
         ),
     )
+
+
+# --- Conversations --------------------------------------------------------------------------
+
+
+def _now() -> Any:
+    return mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
+
+
+class ChatSession(Base):
+    __tablename__ = "sessions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(UUID)
+    title: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = _now()
+    updated_at: Mapped[datetime] = _now()
+    state: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        UUID, ForeignKey("sessions.id", ondelete="CASCADE")
+    )
+    role: Mapped[str] = mapped_column(Text)
+    content: Mapped[str] = mapped_column(Text)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    status: Mapped[str] = mapped_column(Text, server_default="ok")
+    created_at: Mapped[datetime] = _now()
+
+    __table_args__ = (
+        CheckConstraint(_in("role", ROLES), name="ck_messages_role"),
+        CheckConstraint(_in("status", MESSAGE_STATUSES), name="ck_messages_status"),
+        Index("ix_messages_session_created", "session_id", "created_at"),
+    )
+
+
+class ToolCall(Base):
+    __tablename__ = "tool_calls"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
+    message_id: Mapped[uuid.UUID] = mapped_column(
+        UUID, ForeignKey("messages.id", ondelete="CASCADE"), index=True
+    )
+    seq: Mapped[int] = mapped_column(SmallInteger)
+    tool_name: Mapped[str] = mapped_column(Text)
+    args: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    result: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True))
+    latency_ms: Mapped[int] = mapped_column(Integer)
+    error: Mapped[str | None] = mapped_column(Text)
+
+
+class LlmUsage(Base):
+    __tablename__ = "llm_usage"
+
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
+    message_id: Mapped[uuid.UUID] = mapped_column(
+        UUID, ForeignKey("messages.id", ondelete="CASCADE"), index=True
+    )
+    model: Mapped[str] = mapped_column(Text)
+    input_tokens: Mapped[int | None] = mapped_column(Integer)
+    output_tokens: Mapped[int | None] = mapped_column(Integer)
+    cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))  # NULL: not reported

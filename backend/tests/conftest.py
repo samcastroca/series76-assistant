@@ -38,3 +38,16 @@ async def catalog_session(catalog_db_url: str) -> AsyncIterator[AsyncSession]:
             yield session
     finally:
         await engine.dispose()
+
+
+@pytest.fixture
+async def db_session(catalog_db_url: str) -> AsyncIterator[AsyncSession]:
+    """A session on the catalog database with the conversation tables emptied first."""
+    engine = make_engine(catalog_db_url)
+    try:
+        async with engine.begin() as conn:
+            await conn.exec_driver_sql("TRUNCATE sessions CASCADE")
+        async with make_sessionmaker(engine)() as session:
+            yield session
+    finally:
+        await engine.dispose()
