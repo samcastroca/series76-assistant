@@ -309,6 +309,7 @@ async def test_malformed_requests_use_the_shape(client) -> None:
             headers={"Content-Type": "application/json"},
         )
         assert_error(malformed, 400, "invalid_request")
+        assert malformed.json()["error"]["message"] == "Invalid request: body."
         assert_error(await c.put("/api/sessions"), 405, "method_not_allowed")
         assert_error(await c.get("/api/sessions/not-a-uuid/messages"), 400, "invalid_request")
         unknown = "00000000-0000-4000-8000-000000000000"

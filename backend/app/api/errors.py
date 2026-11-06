@@ -33,7 +33,11 @@ def install(app: FastAPI) -> None:
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError) -> JSONResponse:
-        fields = sorted({".".join(str(p) for p in e["loc"][1:]) or "body" for e in exc.errors()})
+        fields = sorted(
+            "body" if e["type"] == "json_invalid" else ".".join(map(str, e["loc"][1:])) or "body"
+            for e in exc.errors()
+        )
+        fields = list(dict.fromkeys(fields))
         return error_response(400, "invalid_request", f"Invalid request: {', '.join(fields)}.")
 
     @app.exception_handler(StarletteHTTPException)
