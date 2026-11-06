@@ -25,4 +25,5 @@ Hz on AC tables, a single value on 24 V tables). Four 3-phase rows are printed a
 ## Consequences
 
 - Queries go through a view or joins; the flat `v_actuator_specs` view comes with the tools.
+  (Amended by ADR 0003: no view; the ORM loads the three tables.)
 - `alembic check` in the test suite keeps the models and the migrations in sync.

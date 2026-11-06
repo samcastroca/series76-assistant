@@ -26,7 +26,7 @@ Las tools y el catálogo (resaltados) son el único camino hacia los números. E
 
 ## Modelo de datos e ingesta
 
-Tres tablas normalizadas, porque el torque depende del tipo de servicio y la velocidad y las corrientes dependen de la frecuencia. Encima, una vista plana `v_actuator_specs` que consultan las tools.
+Tres tablas normalizadas, porque el torque depende del tipo de servicio y la velocidad y las corrientes dependen de la frecuencia. Las tools leen las tres tablas con el ORM a través de un repositorio de consultas parametrizadas (ver `docs/adr/0003-tool-logic-in-python.md`).
 
 ```sql
 CREATE TABLE actuators (
@@ -94,15 +94,17 @@ Un agente con tool calling (`create_agent` de LangChain sobre LangGraph) y tres 
 | Tool | Entrada | Salida | Casos que resuelve |
 | --- | --- | --- | --- |
 | `get_actuator` | `part_number` (texto libre) | `status`: found · partial\_match · not\_found · no\_data; specs completas; sugerencias | Consulta puntual, normalización, "¿quisiste decir…?", consultas parciales como "763C" |
-| `search_actuators` | enclosure, voltage\_v, phase, current\_type, service\_type, min\_torque + unidad, max\_speed\_s, min\_duty\_cycle, csa\_required, frequency\_hz, limit | candidatos ordenados; si no hay, `blocking_filters` y `closest_alternatives` | Recomendación, requisitos imposibles, alternativas |
+| `search_actuators` | enclosure, voltage\_v, phase, current\_type, service\_type, min\_torque + unidad, max\_speed\_s, min\_duty\_cycle\_pct, csa\_required, series\_size, frequency\_hz, limit | candidatos ordenados; si no hay, `blocking_filters` y `closest_alternatives` | Recomendación, requisitos imposibles, alternativas |
 | `list_catalog_options` | campo opcional | valores disponibles y rangos (p. ej., torque máximo por encapsulado) | Ambigüedad, "¿qué voltajes hay?" |
 
 **Lógica de `search_actuators` (Python, no LLM):**
 
-1. Filtros duros: encapsulado, alimentación, servicio y certificación.
-2. Voltaje con tolerancia de ±10% (nota 3 de la tabla). Si el usuario tiene 230V, aplica la tabla de 220V; se informa en la respuesta.
-3. Torque mínimo en la unidad pedida. Orden por menor margen sobre lo requerido, luego por velocidad.
-4. Sin resultados: relaja un filtro a la vez y devuelve cuál bloqueó y la alternativa más cercana.
+La unidad de búsqueda es el par (actuador, tipo de servicio), porque el torque depende del servicio. Las filas N/A nunca coinciden. Ver `docs/adr/0003-tool-logic-in-python.md`.
+
+1. Filtros duros: encapsulado, alimentación, servicio, certificación y tamaño. Una alimentación AC/DC sirve a peticiones AC y DC. Pedir `on_off` o `modulating` excluye el trifásico (`unspecified`), que siempre lleva el aviso `service_type_unspecified`.
+2. Voltaje con tolerancia de ±10% (nota 3 de la tabla). Si el usuario tiene 230V, aplica la tabla de 220V y devuelve `tolerance_applied = true`.
+3. Torque mínimo en la columna de la unidad pedida, sin convertir. Velocidad a la frecuencia pedida o, sin ella, la más lenta publicada. Orden por menor margen sobre lo requerido, luego por velocidad.
+4. Sin resultados: relaja un filtro a la vez (primero torque, velocidad y duty; al final CSA y encapsulado) y devuelve `blocking_filters` y `closest_alternatives` marcadas con `meets_requirements = false` y el filtro que no cumplen. Si ningún filtro por sí solo desbloquea la búsqueda, devuelve `multiple_filters_blocking = true` sin alternativas.
 
 **System prompt (puntos clave):**
 
