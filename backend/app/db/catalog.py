@@ -47,3 +47,8 @@ async def list_actuators(session: AsyncSession, with_data_only: bool = False) ->
     if with_data_only:
         stmt = stmt.where(Actuator.data_available)
     return (await session.scalars(stmt)).all()
+
+
+async def get_many(session: AsyncSession, part_numbers: Sequence[str]) -> Sequence[Actuator]:
+    stmt = _actuators().where(Actuator.part_number.in_(part_numbers))
+    return (await session.scalars(stmt)).all()

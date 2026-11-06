@@ -7,9 +7,12 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0.16",
     "asyncpg",
     "alembic",
-    "pydantic>=2",
+    "pydantic>=2.14",
     "pydantic-settings",
     "pyyaml",
+    "langchain>=1.4.9",
+    "langchain-openrouter>=0.2.9",
+    "langchain-google-genai>=4.4.3",
 ]
 
 [dependency-groups]

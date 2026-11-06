@@ -122,6 +122,16 @@ def _match(c: matching.Candidate, filters: SearchFilters, unmet: tuple = ()) -> 
     )
 
 
+async def specs_for(session: AsyncSession, result: SearchResult) -> list[ActuatorSpec]:
+    """Full specs of the products a search shows (matches, or the closest alternatives), in the
+    order they appear. Lets the backend draw complete product cards from tool output while the
+    model only sees the compact SearchResult."""
+    matches = result.matches or result.closest_alternatives
+    shown = list(dict.fromkeys(m.part_number for m in matches))
+    by_pn = {a.part_number: a for a in await catalog.get_many(session, shown)}
+    return [to_spec(by_pn[pn]) for pn in shown if pn in by_pn]
+
+
 # --- list_catalog_options -------------------------------------------------------------------
 
 
