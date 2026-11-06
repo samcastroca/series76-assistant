@@ -17,8 +17,10 @@ from app.schemas.trace import ToolCallRecord, UsageRecord
 _CHRONOLOGICAL = (Message.created_at, Message.role.desc())
 
 
-async def create_session(db: AsyncSession, title: str) -> ChatSession:
-    session = ChatSession(id=uuid.uuid4(), title=title, state={})
+async def create_session(
+    db: AsyncSession, title: str, session_id: uuid.UUID | None = None
+) -> ChatSession:
+    session = ChatSession(id=session_id or uuid.uuid4(), title=title, state={})
     db.add(session)
     await db.flush()
     await db.refresh(session)

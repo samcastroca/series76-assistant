@@ -13,7 +13,7 @@ from langgraph.graph.state import CompiledStateGraph
 
 from app.agent.context import AgentContext
 from app.agent.fake import RuleBasedFakeModel
-from app.agent.middleware import record_tool_calls, session_prompt
+from app.agent.middleware import record_model_calls, record_tool_calls, session_prompt
 from app.agent.tools import TOOLS
 from app.config import Settings
 
@@ -55,8 +55,10 @@ def build_agent(
         if settings.fallback_model and settings.llm_provider != "fake":
             fallback = build_chat_model(settings, settings.fallback_model)
 
+    # Order matters: record_model_calls wraps the fallback, so it sees whichever model answered.
     middleware: list[AgentMiddleware] = [
         session_prompt,
+        record_model_calls,
         # 'error' on both limits: the alternatives append internal English text that would reach
         # the answer. The conversation service turns the error into a controlled response.
         ModelCallLimitMiddleware(run_limit=settings.model_call_limit, exit_behavior="error"),

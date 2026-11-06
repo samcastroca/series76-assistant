@@ -1,4 +1,5 @@
-"""Agent middleware: record every tool call and turn tool failures into a message the model can
+"""Agent middleware: record every model call (usage) and tool call (args, result, latency) as it
+happens, enforce the per-turn call budgets, turn tool failures into messages the model can
 handle, and build the system prompt with the session's active part numbers."""
 
 import logging
@@ -7,12 +8,21 @@ from functools import cache
 from pathlib import Path
 from time import perf_counter
 
-from langchain.agents.middleware import ModelRequest, dynamic_prompt, wrap_tool_call
-from langchain.messages import ToolMessage
+from langchain.agents.middleware import (
+    ModelRequest,
+    ModelResponse,
+    dynamic_prompt,
+    wrap_model_call,
+    wrap_tool_call,
+)
+from langchain.agents.middleware.model_call_limit import ModelCallLimitExceededError
+from langchain.agents.middleware.tool_call_limit import ToolCallLimitExceededError
+from langchain.messages import AIMessage, ToolMessage
 from langchain.tools.tool_node import ToolCallRequest
 from langgraph.types import Command
 
 from app.agent.context import AgentContext
+from app.schemas.trace import UsageRecord
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +56,33 @@ def session_prompt(request: ModelRequest) -> str:
     return render_system_prompt(ctx.active_parts, ctx.shown_parts)
 
 
+def usage_record(message: AIMessage, default_model: str) -> UsageRecord:
+    meta = message.usage_metadata or {}
+    cost = message.response_metadata.get("cost")  # OpenRouter reports it; others do not
+    return UsageRecord(
+        model=message.response_metadata.get("model_name") or default_model,
+        input_tokens=meta.get("input_tokens"),
+        output_tokens=meta.get("output_tokens"),
+        cost_usd=None if cost is None else str(cost),
+    )
+
+
+@wrap_model_call
+async def record_model_calls(
+    request: ModelRequest, handler: Callable[[ModelRequest], Awaitable[ModelResponse]]
+) -> ModelResponse:
+    ctx: AgentContext = request.runtime.context
+    limit = ctx.model_call_limit
+    if limit is not None and len(ctx.usage) >= limit:
+        raise ModelCallLimitExceededError(0, len(ctx.usage), None, limit)
+    response = await handler(request)
+    messages = response.result if isinstance(response, ModelResponse) else [response]
+    ctx.usage.extend(
+        usage_record(m, ctx.default_model) for m in messages if isinstance(m, AIMessage)
+    )
+    return response
+
+
 @wrap_tool_call
 async def record_tool_calls(
     request: ToolCallRequest,
@@ -53,6 +90,9 @@ async def record_tool_calls(
 ) -> ToolMessage | Command:
     ctx: AgentContext = request.runtime.context
     call = request.tool_call
+    limit, used = ctx.tool_call_limit, len(ctx.recorder.calls)
+    if limit is not None and used >= limit:
+        raise ToolCallLimitExceededError(0, used, None, limit)
     start = perf_counter()
     try:
         message = await handler(request)
