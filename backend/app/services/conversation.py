@@ -5,8 +5,9 @@ answer's numbers (one retry, then strip them) -> build products and response_typ
 results -> persist the user message, the answer, its tool calls and LLM usage in one
 transaction.
 
-- A provider failure stores the user message with status 'error' (with whatever tool calls and
-  usage the turn produced) and raises LlmUnavailable (503).
+- A provider failure raises LlmUnavailable (503). In an existing session the user message is
+  stored with status 'error' (with the turn's tool calls and usage) so the app can show it and
+  retry; a new session is not created, since the 503 body cannot return its id.
 - A per-turn call limit or an empty answer returns a controlled 'error' answer; the internal
   detail goes to the trace only.
 - The call limits are per turn: the validator's retry shares the first run's budget."""
@@ -181,9 +182,10 @@ class ConversationService:
     async def _save_failed(
         self, loaded: _Loaded, query: str, ctx: AgentContext, error: str
     ) -> None:
+        if loaded.is_new:
+            logger.warning("provider failed on a new session; nothing stored (%s)", error)
+            return
         async with self.sessionmaker() as db:
-            if loaded.is_new:
-                await repo.create_session(db, loaded.title, loaded.session_id)
             payload = {"error": LlmUnavailable.code, "internal_error": error}
             message = await repo.add_message(
                 db, loaded.session_id, "user", query, payload, status="error"

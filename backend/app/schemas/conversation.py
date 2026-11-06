@@ -105,7 +105,8 @@ class Clarification(BaseModel):
 
 class ConversationRequest(BaseModel):
     session_id: uuid.UUID | None = None
-    query: str = Field(min_length=1)
+    # Generous parsing cap; the route enforces MAX_QUERY_CHARS (query_too_long) after strip.
+    query: str = Field(max_length=20_000)
 
 
 class ConversationResponse(BaseModel):

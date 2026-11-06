@@ -89,28 +89,34 @@ async def test_turn_is_persisted_with_trace_and_usage(make_service) -> None:
     assert session.state["active_parts"] == [PN]
 
 
-async def test_provider_failure_keeps_user_message_and_no_answer(make_service) -> None:
+async def test_provider_failure_on_a_new_session_stores_nothing(make_service) -> None:
     service = make_service([ConnectionError("provider down")])
     with pytest.raises(LlmUnavailable):
         await service.handle(None, "hola")
 
-    maker = make_service.maker
-    assert await _count(maker, Message, role="user", status="error") == 1
-    assert await _count(maker, Message, role="assistant") == 0
+    maker = make_service.maker  # the 503 cannot return a session id, so no orphan session
+    assert await _count(maker, Message) == 0
     assert await _count(maker, ToolCall) == 0 and await _count(maker, LlmUsage) == 0
 
 
-async def test_provider_failure_mid_turn_keeps_its_trace(make_service) -> None:
-    service = make_service([lookup(), ConnectionError("provider down")])
+async def test_provider_failure_keeps_the_user_message_and_its_trace(make_service) -> None:
+    service = make_service([lookup(), AIMessage("Listo."), lookup(), ConnectionError("down")])
+    first = await service.handle(None, "q")
     with pytest.raises(LlmUnavailable):
-        await service.handle(None, "q")
+        await service.handle(first.session_id, "otra")
+
     maker = make_service.maker
     async with maker() as db:
-        failed = await db.scalar(select(Message).where(Message.status == "error"))
-        trace = await repo.get_trace(db, failed.id)
+        messages = await repo.list_messages(db, first.session_id)
+        trace = await repo.get_trace(db, messages[-1].id)
+    assert [(m.role, m.status) for m in messages] == [
+        ("user", "ok"),
+        ("assistant", "ok"),
+        ("user", "error"),
+    ]
     assert [c.tool_name for c in trace.tool_calls] == ["get_actuator"]
     assert len(trace.usage) == 1  # the model call that succeeded before the failure
-    assert "ConnectionError" in failed.payload["internal_error"]
+    assert "ConnectionError" in messages[-1].payload["internal_error"]
 
 
 async def test_unbacked_number_triggers_one_retry_with_a_note(make_service) -> None:

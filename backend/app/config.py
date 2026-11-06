@@ -3,7 +3,7 @@
 from functools import lru_cache
 from typing import Literal, Self
 
-from pydantic import SecretStr, model_validator
+from pydantic import SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -32,6 +32,13 @@ class Settings(BaseSettings):
     ingest_llm_model: str | None = None
     google_api_key: SecretStr | None = None
     ingest_openrouter_api_key: SecretStr | None = None
+
+    @field_validator(
+        "agent_model", "fallback_model", "openrouter_api_key", "google_api_key", mode="before"
+    )
+    @classmethod
+    def _blank_is_unset(cls, value: str | None) -> str | None:
+        return value or None  # compose passes unset variables as ""
 
     @model_validator(mode="after")
     def _real_provider_is_configured(self) -> Self:

@@ -18,6 +18,13 @@ def test_real_provider_requires_model(provider) -> None:
         Settings(llm_provider=provider, openrouter_api_key="k", google_api_key="k")
 
 
+def test_blank_values_from_compose_count_as_unset() -> None:
+    s = Settings(agent_model="", fallback_model="", openrouter_api_key="")
+    assert s.agent_model is None and s.fallback_model is None and s.openrouter_api_key is None
+    with pytest.raises(ValidationError, match="OPENROUTER_API_KEY"):
+        Settings(llm_provider="openrouter", agent_model="some/model", openrouter_api_key="")
+
+
 @pytest.mark.parametrize(
     ("provider", "key_name"), [("openrouter", "OPENROUTER_API_KEY"), ("google", "GOOGLE_API_KEY")]
 )
