@@ -124,18 +124,26 @@ def test_relaxation_reports_each_blocking_filter() -> None:
     filters = SearchFilters(enclosure="explosionproof", min_torque=300, torque_unit="in_lb")
     outcome = matching.run_search(specs, filters, None)
     assert outcome.matches == []
-    assert outcome.blocking == [("min_torque", 1), ("enclosure", 1)]
+    assert outcome.blocking == [(("min_torque",), 1), (("enclosure",), 1)]
+    assert not outcome.multiple_blocking
     assert [(c.actuator.part_number, f) for c, f in outcome.alternatives] == [
-        ("XP", "min_torque"),
-        ("WP", "enclosure"),
+        ("XP", ("min_torque",)),
+        ("WP", ("enclosure",)),
     ]
 
 
-def test_relaxation_flags_when_no_single_filter_unblocks() -> None:
-    specs = [_spec("WP", _svc("on_off", 100, 10))]
-    filters = SearchFilters(enclosure="explosionproof", min_torque=300, torque_unit="in_lb")
+def test_relaxation_falls_back_to_the_smallest_filter_set() -> None:
+    specs = [_spec("WP", _svc("on_off", 100, 10), series_size=3)]
+    filters = SearchFilters(
+        enclosure="explosionproof", min_torque=300, torque_unit="in_lb", series_size=3
+    )
     outcome = matching.run_search(specs, filters, None)
-    assert outcome.blocking == [] and outcome.alternatives == [] and outcome.multiple_blocking
+    # No single filter unblocks; the pair does, and series_size (met) is never relaxed.
+    assert outcome.multiple_blocking
+    assert outcome.blocking == [(("min_torque", "enclosure"), 1)]
+    assert [(c.actuator.part_number, s) for c, s in outcome.alternatives] == [
+        ("WP", ("min_torque", "enclosure"))
+    ]
 
 
 def test_round_robin_respects_a_small_limit() -> None:
@@ -148,7 +156,9 @@ def test_round_robin_respects_a_small_limit() -> None:
     )
     outcome = matching.run_search(specs, filters, None)
     assert len(outcome.blocking) == 2
-    assert [(c.actuator.part_number, f) for c, f in outcome.alternatives] == [("XP", "min_torque")]
+    assert [(c.actuator.part_number, f) for c, f in outcome.alternatives] == [
+        ("XP", ("min_torque",))
+    ]
 
 
 def test_without_torque_request_rank_by_smallest_inlb() -> None:
@@ -283,11 +293,9 @@ async def test_24v_ac_modulating_is_blocked_by_current_and_service(catalog_sessi
     filters = SearchFilters(voltage_v=24, current_type="AC", service_type="modulating")
     result = await search_actuators(catalog_session, filters)
     assert result.matches == []
-    blocking = {b.filter for b in result.blocking_filters}
-    assert {"current_type", "service_type"} <= blocking
-    alternatives = {
-        (m.current_type, m.service_type, m.unmet[0]) for m in result.closest_alternatives
-    }
+    blocking = {tuple(b.filters) for b in result.blocking_filters}
+    assert {("service_type",), ("current_type",)} <= blocking
+    alternatives = {(m.current_type, m.service_type, *m.unmet) for m in result.closest_alternatives}
     assert ("DC", "modulating", "current_type") in alternatives
     assert ("AC/DC", "on_off", "service_type") in alternatives
     assert not any(m.meets_requirements for m in result.closest_alternatives)
@@ -305,11 +313,29 @@ async def test_explosionproof_above_max_torque_offers_the_strongest(catalog_sess
     filters = SearchFilters(enclosure="explosionproof", min_torque=xp_max + 1, torque_unit="in_lb")
     result = await search_actuators(catalog_session, filters)
     assert result.matches == []
-    assert "min_torque" in {b.filter for b in result.blocking_filters}
+    assert ["min_torque"] in [b.filters for b in result.blocking_filters]
     first = result.closest_alternatives[0]
     assert first.unmet == ["min_torque"] and first.meets_requirements is False
     assert first.enclosure == "explosionproof" and first.torque_inlb == xp_max
     assert first.torque_margin == -1
+
+
+@pytest.mark.db
+async def test_two_blocking_filters_return_the_smallest_relaxation(catalog_session) -> None:
+    # Explosionproof 3-phase does not exist, and no model reaches the requested torque.
+    catalog_max = max(s.torque_inlb for r in CATALOG for s in r.service_ratings if s.torque_inlb)
+    assert not any(r.enclosure == "explosionproof" and r.phase == 3 for r in CATALOG)
+    filters = SearchFilters(
+        enclosure="explosionproof", phase=3, min_torque=catalog_max + 1, torque_unit="in_lb"
+    )
+    result = await search_actuators(catalog_session, filters)
+    assert result.matches == [] and result.multiple_filters_blocking
+    sets = {tuple(b.filters) for b in result.blocking_filters}
+    assert sets == {("min_torque", "phase"), ("min_torque", "enclosure")}
+    assert result.closest_alternatives
+    for m in result.closest_alternatives:
+        assert not m.meets_requirements and tuple(m.unmet) in sets
+        assert m.torque_inlb <= catalog_max
 
 
 @pytest.mark.db
@@ -318,8 +344,8 @@ async def test_size_7_with_csa_conflict(catalog_session) -> None:
         catalog_session, SearchFilters(series_size=7, csa_required=True)
     )
     assert result.matches == []
-    blocking = {b.filter for b in result.blocking_filters}
-    assert {"csa_required", "series_size"} <= blocking
+    blocking = {tuple(b.filters) for b in result.blocking_filters}
+    assert {("csa_required",), ("series_size",)} <= blocking
 
 
 @pytest.mark.db
@@ -351,7 +377,7 @@ async def test_exact_voltage_does_not_flag_tolerance(catalog_session) -> None:
 async def test_out_of_tolerance_voltage_blocks(catalog_session) -> None:
     result = await search_actuators(catalog_session, SearchFilters(voltage_v=480))
     assert result.matches == [] and result.matched_voltage_v is None
-    assert [b.filter for b in result.blocking_filters] == ["voltage_v"]
+    assert [b.filters for b in result.blocking_filters] == [["voltage_v"]]
 
 
 @pytest.mark.db

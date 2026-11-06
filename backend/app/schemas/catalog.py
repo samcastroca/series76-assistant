@@ -155,7 +155,9 @@ class Match(BaseModel):
 
 
 class BlockingFilter(BaseModel):
-    filter: FilterName
+    """A minimal set of filters that, removed together, lets `matches_without` results through."""
+
+    filters: list[FilterName]
     matches_without: int
 
 
@@ -165,7 +167,7 @@ class SearchResult(BaseModel):
     tolerance_applied: bool
     blocking_filters: list[BlockingFilter] = []
     closest_alternatives: list[Match] = []
-    multiple_filters_blocking: bool = False
+    multiple_filters_blocking: bool = False  # no single filter unblocks; sets have 2+
     applied_filters: SearchFilters
 
 

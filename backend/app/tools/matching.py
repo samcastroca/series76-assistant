@@ -4,6 +4,7 @@ functions over ActuatorSpec objects; no database and no LLM."""
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from decimal import Decimal
+from itertools import combinations
 
 from app.schemas.catalog import (
     ActuatorSpec,
@@ -42,11 +43,14 @@ class Candidate:
     service: ServiceSpec
 
 
+Relaxation = tuple[FilterName, ...]
+
+
 @dataclass
 class SearchOutcome:
     matches: list[Candidate]
-    blocking: list[tuple[FilterName, int]] = field(default_factory=list)
-    alternatives: list[tuple[Candidate, FilterName]] = field(default_factory=list)
+    blocking: list[tuple[Relaxation, int]] = field(default_factory=list)
+    alternatives: list[tuple[Candidate, Relaxation]] = field(default_factory=list)
     multiple_blocking: bool = False
 
 
@@ -144,7 +148,7 @@ def build_predicates(filters: SearchFilters, nominal: int | None) -> dict[Filter
 
 
 def rank(
-    items: Iterable[Candidate], filters: SearchFilters, relaxed: FilterName | None = None
+    items: Iterable[Candidate], filters: SearchFilters, relaxed: Relaxation = ()
 ) -> list[Candidate]:
     """Smallest torque margin over the request first, then fastest, then part number. With
     torque relaxed, smallest shortfall first (the strongest model below the request). Without a
@@ -153,7 +157,7 @@ def rank(
     def key(c: Candidate) -> tuple:
         if filters.min_torque is not None:
             margin = torque_margin(c, filters)
-            primary = None if margin is None else (-margin if relaxed == "min_torque" else margin)
+            primary = None if margin is None else (-margin if "min_torque" in relaxed else margin)
         else:
             primary = c.service.torque_inlb
         speed = speed_s(c.actuator, filters.frequency_hz)
@@ -175,30 +179,38 @@ def run_search(
     pool = candidates(actuators)
     predicates = build_predicates(filters, nominal)
 
-    def passing(skip: FilterName | None = None) -> list[Candidate]:
-        return [c for c in pool if all(p(c) for n, p in predicates.items() if n != skip)]
+    def passing(skip: Relaxation = ()) -> list[Candidate]:
+        return [c for c in pool if all(p(c) for n, p in predicates.items() if n not in skip)]
 
     matches = rank(passing(), filters)
     if matches or not predicates:
         return SearchOutcome(matches=matches[: filters.limit])
 
-    # Nothing matches: drop one filter at a time and report which ones unblock the search.
-    relaxed = {name: rank(passing(name), filters, name) for name in predicates}
-    relaxed = {name: found for name, found in relaxed.items() if found}
-    return SearchOutcome(
-        matches=[],
-        blocking=[(name, len(found)) for name, found in relaxed.items()],
-        alternatives=_round_robin(relaxed, filters.limit),
-        multiple_blocking=not relaxed,
-    )
+    # Nothing matches: find the smallest sets of filters whose removal unblocks the search, one
+    # filter at a time first, then pairs, and so on. Because the sets are minimal, every
+    # alternative fails exactly the filters of its set.
+    for size in range(1, len(predicates) + 1):
+        relaxed = {
+            skip: found
+            for skip in combinations(predicates, size)
+            if (found := rank(passing(skip), filters, skip))
+        }
+        if relaxed:
+            return SearchOutcome(
+                matches=[],
+                blocking=[(skip, len(found)) for skip, found in relaxed.items()],
+                alternatives=_round_robin(relaxed, filters.limit),
+                multiple_blocking=size > 1,
+            )
+    return SearchOutcome(matches=[])  # nothing with data in the catalog
 
 
 def _round_robin(
-    relaxed: dict[FilterName, list[Candidate]], limit: int
-) -> list[tuple[Candidate, FilterName]]:
-    """Take the best of each relaxation in turn, so every blocking filter shows an alternative."""
-    queues = [[(c, name) for c in found] for name, found in relaxed.items()]
-    picked: list[tuple[Candidate, FilterName]] = []
+    relaxed: dict[Relaxation, list[Candidate]], limit: int
+) -> list[tuple[Candidate, Relaxation]]:
+    """Take the best of each relaxation in turn, so every blocking set shows an alternative."""
+    queues = [[(c, skip) for c in found] for skip, found in relaxed.items()]
+    picked: list[tuple[Candidate, Relaxation]] = []
     depth = 0
     while len(picked) < limit and any(depth < len(q) for q in queues):
         for queue in queues:

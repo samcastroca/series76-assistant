@@ -104,7 +104,7 @@ La unidad de búsqueda es el par (actuador, tipo de servicio), porque el torque 
 1. Filtros duros: encapsulado, alimentación, servicio, certificación y tamaño. Una alimentación AC/DC sirve a peticiones AC y DC. Pedir `on_off` o `modulating` excluye el trifásico (`unspecified`), que siempre lleva el aviso `service_type_unspecified`.
 2. Voltaje con tolerancia de ±10% (nota 3 de la tabla). Si el usuario tiene 230V, aplica la tabla de 220V y devuelve `tolerance_applied = true`.
 3. Torque mínimo en la columna de la unidad pedida, sin convertir. Velocidad a la frecuencia pedida o, sin ella, la más lenta publicada. Orden por menor margen sobre lo requerido, luego por velocidad.
-4. Sin resultados: relaja un filtro a la vez (primero torque, velocidad y duty; al final CSA y encapsulado) y devuelve `blocking_filters` y `closest_alternatives` marcadas con `meets_requirements = false` y el filtro que no cumplen. Si ningún filtro por sí solo desbloquea la búsqueda, devuelve `multiple_filters_blocking = true` sin alternativas.
+4. Sin resultados: relaja un filtro a la vez (primero torque, velocidad y duty; al final CSA y encapsulado) y devuelve `blocking_filters` y `closest_alternatives` marcadas con `meets_requirements = false` y los filtros que no cumplen. Si ningún filtro por sí solo desbloquea la búsqueda, busca la combinación más pequeña que sí lo haga (pares, luego tríos…) y lo marca con `multiple_filters_blocking = true`.
 
 **System prompt (puntos clave):**
 

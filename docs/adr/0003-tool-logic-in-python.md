@@ -28,8 +28,11 @@ when nothing matches, relaxing one filter at a time to report which one blocked.
   - Ranking: smallest torque margin, then speed, then part number. Without a torque request,
     smallest in-lb torque first.
   - `get_actuator` returns `found` for a unique prefix match too, with `matched_by = "prefix"`.
+  - Relaxation: find the smallest sets of filters whose removal unblocks the search (single
+    filters first, then pairs, and so on). Because each set is minimal, every alternative fails
+    exactly the filters of its set (`unmet`); `multiple_filters_blocking` marks sets of 2+.
   - Relaxation order: torque, speed, duty, size, service, current, phase, voltage, CSA,
-    enclosure. Closest alternatives are taken round-robin from each blocking filter, so each one
+    enclosure. Closest alternatives are taken round-robin from each blocking set, so each one
     shows an option; with torque relaxed, the smallest shortfall comes first.
 - `search_actuators` gains `series_size` (needed for "size 7 with CSA").
 - The `v_actuator_specs` view announced in ADR 0001 is not created: the ORM loads the three tables
@@ -39,4 +42,5 @@ when nothing matches, relaxing one filter at a time to report which one blocked.
 
 - Searching loads every row with data on each call. Fine for 68 rows; at thousands of rows the hard
   filters (enclosure, voltage, phase) would move into the SQL `WHERE` and relaxation would re-query.
-- Two filters blocking together are reported as `multiple_filters_blocking` with no alternatives.
+- Minimal-set search tries at most 2^n - 1 filter combinations (n <= 10 active filters), each an
+  in-memory pass; it stops at the first size that yields results.

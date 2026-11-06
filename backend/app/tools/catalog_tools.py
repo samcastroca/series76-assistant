@@ -89,14 +89,16 @@ async def search_actuators(session: AsyncSession, filters: SearchFilters) -> Sea
         matches=[_match(c, filters) for c in outcome.matches],
         matched_voltage_v=nominal,
         tolerance_applied=nominal is not None and nominal != filters.voltage_v,
-        blocking_filters=[BlockingFilter(filter=n, matches_without=k) for n, k in outcome.blocking],
-        closest_alternatives=[_match(c, filters, unmet=n) for c, n in outcome.alternatives],
+        blocking_filters=[
+            BlockingFilter(filters=list(skip), matches_without=k) for skip, k in outcome.blocking
+        ],
+        closest_alternatives=[_match(c, filters, unmet=s) for c, s in outcome.alternatives],
         multiple_filters_blocking=outcome.multiple_blocking,
         applied_filters=filters,
     )
 
 
-def _match(c: matching.Candidate, filters: SearchFilters, unmet: str | None = None) -> Match:
+def _match(c: matching.Candidate, filters: SearchFilters, unmet: tuple = ()) -> Match:
     a, s = c.actuator, c.service
     rating = matching.speed_rating(a, filters.frequency_hz)
     return Match(
@@ -115,8 +117,8 @@ def _match(c: matching.Candidate, filters: SearchFilters, unmet: str | None = No
         speed_s=None if rating is None else rating.speed_s,
         speed_frequency_hz=None if rating is None else rating.frequency_hz,
         warnings=a.warnings,
-        meets_requirements=unmet is None,
-        unmet=[unmet] if unmet else [],
+        meets_requirements=not unmet,
+        unmet=list(unmet),
     )
 
 
