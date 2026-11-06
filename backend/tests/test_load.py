@@ -11,7 +11,7 @@ from ingest.build import build_table, catalog_json
 from ingest.extracted import ExtractionRun, MotorPowerGroup, column_key, row_columns
 from ingest.load import run_load
 from ingest.spec import load_spec
-from tests.test_migrations import _alembic, _fetch, db_url  # noqa: F401  (fixture)
+from tests._db import alembic_config, fetch
 
 pytestmark = pytest.mark.db
 
@@ -50,15 +50,15 @@ def _catalog(tmp_path: Path) -> Path:
     return path
 
 
-def test_load_is_idempotent(db_url, tmp_path: Path) -> None:  # noqa: F811
-    command.upgrade(_alembic(db_url), "head")
+def test_load_is_idempotent(db_url, tmp_path: Path) -> None:
+    command.upgrade(alembic_config(db_url), "head")
     url = db_url.render_as_string(hide_password=False)
     catalog = _catalog(tmp_path)
 
     assert asyncio.run(run_load(url, catalog)) == 4
-    first = dict(asyncio.run(_fetch(db_url, COUNTS_SQL))[0])
+    first = dict(asyncio.run(fetch(db_url, COUNTS_SQL))[0])
     asyncio.run(run_load(url, catalog))
-    second = dict(asyncio.run(_fetch(db_url, COUNTS_SQL))[0])
+    second = dict(asyncio.run(fetch(db_url, COUNTS_SQL))[0])
 
     # 3 data rows: 3 service rows; 3-phase has 60/50 Hz rows, 24 V one NULL-frequency row.
     assert first == second == {"a": 4, "s": 3, "e": 2 + 1 + 1, "na": 1}

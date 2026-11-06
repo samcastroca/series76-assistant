@@ -1,33 +1,33 @@
-"""Shared fixtures. `catalog_db_url` is a throwaway database migrated to head and loaded with the
-real data/processed/catalog.json; requires the Postgres service from docker compose."""
+"""Shared fixtures for tests that need the Postgres service from docker compose."""
 
 import asyncio
-import uuid
 from collections.abc import AsyncIterator, Iterator
 
 import pytest
 from alembic import command
-from sqlalchemy.engine import make_url
+from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import get_settings
 from app.db.engine import make_engine, make_sessionmaker
 from ingest.load import run_load
-from tests.test_migrations import _admin, _alembic
+from tests._db import alembic_config, temp_database
+
+
+@pytest.fixture
+def db_url() -> Iterator[URL]:
+    """An empty throwaway database, one per test."""
+    with temp_database() as url:
+        yield url
 
 
 @pytest.fixture(scope="module")
 def catalog_db_url() -> Iterator[str]:
-    name = f"series76_test_{uuid.uuid4().hex[:8]}"
-    asyncio.run(_admin(f'CREATE DATABASE "{name}"'))
-    try:
-        url = make_url(get_settings().database_url).set(database=name)
-        command.upgrade(_alembic(url), "head")
+    """A throwaway database migrated to head and loaded with the real catalog.json."""
+    with temp_database() as url:
+        command.upgrade(alembic_config(url), "head")
         rendered = url.render_as_string(hide_password=False)
         asyncio.run(run_load(rendered))
         yield rendered
-    finally:
-        asyncio.run(_admin(f'DROP DATABASE "{name}" WITH (FORCE)'))
 
 
 @pytest.fixture
