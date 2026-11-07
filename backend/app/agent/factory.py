@@ -29,7 +29,7 @@ def build_chat_model(settings: Settings, model_id: str | None) -> BaseChatModel:
             api_key=settings.openrouter_api_key,
             temperature=0,
             max_tokens=settings.llm_max_tokens,
-            timeout=settings.llm_timeout_s,
+            timeout=int(settings.llm_timeout_s * 1000),  # ChatOpenRouter takes milliseconds
             max_retries=1,
         )
     from langchain_google_genai import ChatGoogleGenerativeAI
@@ -39,7 +39,7 @@ def build_chat_model(settings: Settings, model_id: str | None) -> BaseChatModel:
         api_key=settings.google_api_key,
         temperature=0,
         max_tokens=settings.llm_max_tokens,
-        timeout=settings.llm_timeout_s,
+        timeout=settings.llm_timeout_s,  # seconds
         retries=1,
     )
 
