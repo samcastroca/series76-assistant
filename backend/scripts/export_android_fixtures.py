@@ -2,9 +2,9 @@
 
 Runs the FastAPI app in-process against a throwaway database (migrated and loaded with
 catalog.json) with the rule-based fake LLM, so every catalog value in a fixture comes from the
-database through the real tools. Requests run as a test engineer that logs in first. IDs,
-timestamps and the access token are replaced by stable placeholders, so regenerating gives the
-same files.
+database through the real tools. Requests run as a test engineer that logs in first; the trace
+is read as a test developer. IDs, timestamps, tool latencies and the access token are replaced by
+stable placeholders, so regenerating gives the same files.
 
     uv run python -m scripts.export_android_fixtures      (needs `docker compose up db`)
 """
@@ -37,6 +37,9 @@ _UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 _DATETIME = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})")
 _BASE_TIME = datetime(2026, 1, 15, 9, 0, tzinfo=UTC)
 _EMAIL, _PASSWORD = "engineer@example.com", "fixture-password"
+_DEVELOPER = "developer@example.com"
+_LATENCY = re.compile(r'"latency_ms": \d+')
+_LATENCY_PLACEHOLDER = '"latency_ms": 12'  # measured per run; the value is not the contract
 _JWT_SECRET = "f" * MIN_SECRET_LENGTH
 _TOKEN_PLACEHOLDER = "<access-token>"  # a real JWT changes with every run (exp)
 
@@ -59,13 +62,17 @@ def _queries() -> dict[str, str]:
     }
 
 
-async def _login(c: httpx.AsyncClient) -> Any:
-    return await c.post("/api/auth/login", json={"email": _EMAIL, "password": _PASSWORD})
+async def _login(c: httpx.AsyncClient, email: str = _EMAIL) -> Any:
+    return await c.post("/api/auth/login", json={"email": email, "password": _PASSWORD})
 
 
 @asynccontextmanager
 async def _client(
-    db_url: str, model: BaseChatModel | None = None, signed_in: bool = True, **overrides: Any
+    db_url: str,
+    model: BaseChatModel | None = None,
+    signed_in: bool = True,
+    as_user: str = _EMAIL,
+    **overrides: Any,
 ) -> AsyncIterator[httpx.AsyncClient]:
     settings = Settings(
         _env_file=None,
@@ -81,7 +88,7 @@ async def _client(
     async with app.router.lifespan_context(app):
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
             if signed_in:
-                token = _expect(await _login(c), 200)["access_token"]
+                token = _expect(await _login(c, as_user), 200)["access_token"]
                 c.headers["Authorization"] = f"Bearer {token}"
             yield c
 
@@ -139,6 +146,11 @@ async def _collect(db_url: str) -> dict[str, Any]:
         out["sessions"] = _expect(await c.get("/api/sessions"), 200)
         out["messages"] = _expect(await c.get(f"/api/sessions/{session_id}/messages"), 200)
         out["auth_me"] = _expect(await c.get("/api/auth/me"), 200)
+        trace_path = f"/api/messages/{detail['message_id']}/trace"
+        out["error_forbidden"] = _expect(await c.get(trace_path), 403)  # engineers cannot
+
+    async with _client(db_url, as_user=_DEVELOPER) as c:
+        out["trace"] = _expect(await c.get(trace_path), 200)
 
     async with _client(db_url, signed_in=False) as c:
         login = _expect(await _login(c), 200)
@@ -150,8 +162,8 @@ async def _collect(db_url: str) -> dict[str, Any]:
 
 
 def _normalize(fixtures: dict[str, Any]) -> dict[str, Any]:
-    """Replace UUIDs (by first appearance) and timestamps (by chronological rank) with stable
-    placeholders. Equal values stay equal and the order of events is kept."""
+    """Replace UUIDs (by first appearance), timestamps (by chronological rank) and tool latencies
+    with stable placeholders. Equal values stay equal and the order of events is kept."""
     text = json.dumps(fixtures, ensure_ascii=False, sort_keys=False)
     ids: dict[str, str] = {}
     for found in _UUID.findall(text):
@@ -163,6 +175,7 @@ def _normalize(fixtures: dict[str, Any]) -> dict[str, Any]:
     }
     text = _UUID.sub(lambda m: ids[m.group(0)], text)
     text = _DATETIME.sub(lambda m: times[m.group(0)], text)
+    text = _LATENCY.sub(_LATENCY_PLACEHOLDER, text)
     return json.loads(text)
 
 
@@ -172,15 +185,16 @@ def generate() -> dict[str, Any]:
         command.upgrade(alembic_config(url), "head")
         rendered = url.render_as_string(hide_password=False)
         asyncio.run(run_load(rendered))
-        asyncio.run(_add_user(rendered))
+        asyncio.run(_add_users(rendered))
         return _normalize(asyncio.run(_collect(rendered)))
 
 
-async def _add_user(db_url: str) -> None:
+async def _add_users(db_url: str) -> None:
     engine = make_engine(db_url)
     try:
         async with make_sessionmaker(engine)() as db:
             await create_user(db, _EMAIL, "engineer", _PASSWORD)
+            await create_user(db, _DEVELOPER, "developer", _PASSWORD)
     finally:
         await engine.dispose()
 

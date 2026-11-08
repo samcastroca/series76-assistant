@@ -11,7 +11,7 @@ import pytest
 from pydantic import BaseModel, TypeAdapter
 
 from app.schemas.auth import LoginResponse, UserOut
-from app.schemas.conversation import ConversationResponse, MessageOut, SessionSummary
+from app.schemas.conversation import ConversationResponse, MessageOut, SessionSummary, TraceOut
 from scripts.export_android_fixtures import OUT_DIR, generate, render
 
 
@@ -40,6 +40,7 @@ ERRORS = {
     "budget_exceeded": "budget_exceeded",
     "invalid_credentials": "invalid_credentials",
     "not_authenticated": "not_authenticated",
+    "forbidden": "forbidden",
 }
 
 
@@ -60,6 +61,14 @@ def test_auth_fixtures_match_their_models() -> None:
     login = _load("auth_login")
     assert set(login) == set(LoginResponse.model_fields)
     assert LoginResponse.model_validate(login).user == UserOut.model_validate(_load("auth_me"))
+
+
+def test_trace_fixture_matches_its_model() -> None:
+    body = _load("trace")
+    assert set(body) == set(TraceOut.model_fields)
+    trace = TraceOut.model_validate(body)
+    assert trace.tool_calls and trace.usage  # the Debug screen has something to show
+    assert [c.seq for c in trace.tool_calls] == sorted(c.seq for c in trace.tool_calls)
 
 
 def test_session_and_message_fixtures_match_their_models() -> None:

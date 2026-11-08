@@ -1,0 +1,164 @@
+{
+  "message_id": "00000000-0000-4000-8000-000000000002",
+  "session_id": "00000000-0000-4000-8000-000000000001",
+  "tool_calls": [
+    {
+      "seq": 0,
+      "tool_name": "get_actuator",
+      "args": {
+        "part_number": "761A00-11300000/A"
+      },
+      "result": {
+        "query": "761A00-11300000/A",
+        "status": "found",
+        "actuator": {
+          "phase": 1,
+          "variant": "A",
+          "warnings": [],
+          "enclosure": "weatherproof",
+          "voltage_v": 110,
+          "part_number": "761A00-11300000/A",
+          "series_size": 1,
+          "source_page": 1,
+          "current_type": "AC",
+          "source_table": "wp_110v_1ph",
+          "csa_certified": true,
+          "motor_power_w": 15,
+          "certifications": [
+            "CSA",
+            "CE",
+            "UKCA"
+          ],
+          "data_available": true,
+          "service_ratings": [
+            {
+              "torque_nm": 80,
+              "torque_inlb": 700,
+              "service_type": "on_off",
+              "duty_cycle_pct": 40,
+              "cycles_per_hour": 36,
+              "starts_per_hour": null
+            },
+            {
+              "torque_nm": 65,
+              "torque_inlb": 580,
+              "service_type": "modulating",
+              "duty_cycle_pct": 40,
+              "cycles_per_hour": null,
+              "starts_per_hour": 960
+            }
+          ],
+          "electrical_ratings": [
+            {
+              "fla_a": "1.20",
+              "lra_a": "1.40",
+              "speed_s": 17,
+              "frequency_hz": 60
+            },
+            {
+              "fla_a": "1.10",
+              "lra_a": "1.30",
+              "speed_s": 20,
+              "frequency_hz": 50
+            }
+          ],
+          "hazardous_locations": null
+        },
+        "candidates": [],
+        "matched_by": "exact",
+        "normalized": "761A0011300000A",
+        "suggestions": [],
+        "candidate_count": 0
+      },
+      "latency_ms": 12,
+      "error": null
+    }
+  ],
+  "usage": [
+    {
+      "model": "fake-rules",
+      "input_tokens": 832,
+      "output_tokens": 10,
+      "cost_usd": null
+    },
+    {
+      "model": "fake-rules",
+      "input_tokens": 1059,
+      "output_tokens": 20,
+      "cost_usd": null
+    }
+  ],
+  "payload": {
+    "products": [
+      {
+        "notes": [],
+        "unmet": [],
+        "source": {
+          "page": 1,
+          "table": "wp_110v_1ph"
+        },
+        "service": [
+          {
+            "type": "on_off",
+            "torque": {
+              "nm": 80,
+              "in_lb": 700
+            },
+            "duty_cycle_pct": 40,
+            "cycles_per_hour": 36,
+            "starts_per_hour": null
+          },
+          {
+            "type": "modulating",
+            "torque": {
+              "nm": 65,
+              "in_lb": 580
+            },
+            "duty_cycle_pct": 40,
+            "cycles_per_hour": null,
+            "starts_per_hour": 960
+          }
+        ],
+        "variant": "A",
+        "enclosure": "weatherproof",
+        "electrical": [
+          {
+            "fla_a": 1.2,
+            "lra_a": 1.4,
+            "speed_s": 17,
+            "frequency_hz": 60
+          },
+          {
+            "fla_a": 1.1,
+            "lra_a": 1.3,
+            "speed_s": 20,
+            "frequency_hz": 50
+          }
+        ],
+        "part_number": "761A00-11300000/A",
+        "series_size": 1,
+        "power_supply": {
+          "phase": 1,
+          "voltage_v": 110,
+          "current_type": "AC"
+        },
+        "csa_certified": true,
+        "motor_power_w": 15,
+        "certifications": [
+          "CSA",
+          "CE",
+          "UKCA"
+        ],
+        "data_available": true,
+        "matched_service": null,
+        "meets_requirements": true,
+        "hazardous_locations": null
+      }
+    ],
+    "warnings": [],
+    "suggestions": [],
+    "clarification": null,
+    "response_type": "detail",
+    "highlight_fields": []
+  }
+}
