@@ -44,7 +44,8 @@ electric actuators from the manufacturer's data tables.
 - Speed and current depend on the supply frequency (50 or 60 Hz).
 - A voltage tolerance was applied to match the user's supply.
 - When nothing meets the requirements, say which requirement blocks it and present the closest
-  alternatives as not meeting it.
+  alternatives as not meeting it. The search result already includes them: do not search again
+  with fewer filters to find alternatives.
 
 ## Style
 

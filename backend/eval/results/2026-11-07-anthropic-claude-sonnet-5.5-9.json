@@ -1,0 +1,123 @@
+{
+  "date": "2026-11-07",
+  "api_url": "http://localhost:8000",
+  "llm_provider": "openrouter",
+  "agent_model": "anthropic/claude-sonnet-5.5",
+  "fallback_model": "z-ai/glm-5.3",
+  "selection": {
+    "fast": false,
+    "categories": null,
+    "ids": [
+      "no-match-3ph-modulating"
+    ]
+  },
+  "summary": {
+    "cases": 1,
+    "cases_passed": 0,
+    "pass_rate": 0.0,
+    "turns": 1,
+    "metrics": {
+      "tool_selection": 1.0,
+      "argument_accuracy": 1.0,
+      "expected_part_numbers": null,
+      "response_type": 0.0,
+      "numeric_faithfulness": 1.0,
+      "coreference": null
+    },
+    "latency_ms_p50": 7649,
+    "latency_ms_p95": 7649,
+    "cost_usd_per_turn": "0.024374",
+    "cost_usd_total": "0.024374",
+    "turns_with_cost": 1,
+    "tokens_per_turn": 8775.0
+  },
+  "by_category": {
+    "no_match": {
+      "cases": 1,
+      "cases_passed": 0,
+      "pass_rate": 0.0,
+      "turns": 1,
+      "metrics": {
+        "tool_selection": 1.0,
+        "argument_accuracy": 1.0,
+        "expected_part_numbers": null,
+        "response_type": 0.0,
+        "numeric_faithfulness": 1.0,
+        "coreference": null
+      },
+      "latency_ms_p50": 7649,
+      "latency_ms_p95": 7649,
+      "cost_usd_per_turn": "0.024374",
+      "cost_usd_total": "0.024374",
+      "turns_with_cost": 1,
+      "tokens_per_turn": 8775.0
+    }
+  },
+  "cases": [
+    {
+      "id": "no-match-3ph-modulating",
+      "category": "no_match",
+      "fast": true,
+      "passed": false,
+      "turns": [
+        {
+          "query": "Necesito un actuador modulante trifásico de 220 V",
+          "answer": "No encontré ningún actuador modulante trifásico de 220 V. La tabla trifásica no separa los valores de todo/nada (on/off) y de modulación. Los actuadores modulantes de 220 V que aparecen en el catálogo son monofásicos.\n\n**Trifásicos de 220 V (no indican si el valor es on/off o modulante):**\n- **763A00-11330C00/A**: 300 N·m, 32 s a 50 Hz.\n- **763B00-11330C00/A**: 500 N·m, 32 s a 50 Hz.\n- **763C00-11330C00/A**: 600 N·m, 39 s a 50 Hz.\n- **764A00-11330C00/A**: 800 N·m, 35 s a 50 Hz.\n- **764B00-11330C00/A**: 1200 N·m, 43 s a 50 Hz.\n\nTodos son AC, para intemperie (weatherproof), con certificación CSA y ciclo de trabajo del 70 %. No puedo confirmar que sirvan para modulación, porque la tabla no lo especifica. La velocidad y la corriente dependen de la frecuencia de la red (50 o 60 Hz).\n\n**Modulantes de 220 V, pero monofásicos (no cumplen con la fase):**\n- **761A00-11320000/A**: weatherproof, 65 N·m, ciclo de trabajo del 40 %.\n- **761X30-11320000/A**: explosion-proof, 65 N·m, ciclo de trabajo del 40 %.\n\nPara afinar la búsqueda, dígame:\n- el torque que necesita,\n- la frecuencia de su red (50 o 60 Hz),\n- si necesita una carcasa a prueba de explosión.\n\n¿Prefiere que busque un modulante monofásico, o que siga con los trifásicos?",
+          "response_type": "recommendation",
+          "products": [
+            "763A00-11330C00/A",
+            "763B00-11330C00/A",
+            "763C00-11330C00/A",
+            "764A00-11330C00/A",
+            "764B00-11330C00/A"
+          ],
+          "warnings": [
+            "service_type_unspecified"
+          ],
+          "tool_calls": [
+            {
+              "tool": "search_actuators",
+              "args": {
+                "phase": 3,
+                "voltage_v": 220,
+                "service_type": "modulating"
+              }
+            },
+            {
+              "tool": "search_actuators",
+              "args": {
+                "phase": 3,
+                "voltage_v": 220
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-sonnet-5.5",
+              "input_tokens": 2737,
+              "output_tokens": 236,
+              "cost_usd": "0.007834"
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5",
+              "input_tokens": 5185,
+              "output_tokens": 617,
+              "cost_usd": "0.016540"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 7649,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": null,
+            "response_type": false,
+            "numeric_faithfulness": true,
+            "coreference": null
+          }
+        }
+      ]
+    }
+  ],
+  "langsmith_experiment": "anthropic/claude-sonnet-5.5-f4f32e9a"
+}
