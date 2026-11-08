@@ -6,9 +6,8 @@ actuator at 220 V") and get answers backed by the published catalog tables.
 
 > **Status:** the ingestion, the agent, the REST API and the evaluation suite run locally
 > (`docker compose up`, `make eval-fast`). The Android app has its first layer: the
-> conversation list and the chat with product cards. The API now requires login and the app
-> does not have a login screen yet, so it cannot reach the API until that lands. Login,
-> comparison tables and the debug screen come next.
+> login, the conversation list and the chat with product cards. Comparison tables and the debug
+> screen come next.
 
 ## How it works
 
@@ -137,8 +136,7 @@ make lint                 # ruff check + format check
 ### Android app
 
 Open `android/` in Android Studio (or use Gradle from that folder) and run it on an emulator
-while the backend is up. Until the app has its login screen, every API call answers 401
-`not_authenticated`.
+while the backend is up, and sign in with one of the demo users above.
 
 ```bash
 cd android
@@ -146,6 +144,14 @@ cd android
 ./gradlew assembleDebug   # build the app
 ./gradlew connectedAndroidTest   # Compose UI tests (needs a device or emulator, unlocked)
 ```
+
+- **Sign-in:** the app opens on Login unless it has a stored token, which it validates with
+  `GET /api/auth/me` before showing anything. A 401 on any call (expired or revoked token) ends
+  the session and returns to Login; if the token cannot be checked for another reason (offline,
+  server down) the app offers Retry or Sign out. The account menu in the Conversations screen
+  shows the email and signs out. The token, email and role are stored encrypted (DataStore +
+  Tink, key in the Android Keystore) and excluded from backups; the password is never stored
+  ([ADR 0007](docs/adr/0007-app-session-storage.md)).
 
 - **Backend URL:** the app calls `http://10.0.2.2:8000`, which is the host machine as seen from
   the emulator. To use another address, set `API_BASE_URL=http://<host>:8000` in
@@ -158,7 +164,8 @@ cd android
   stale.
 - **Errors:** each failure gets its own message with "Retry": no connection, server not
   answering (timeout), server down, server error (5xx), assistant unavailable (503
-  `llm_unavailable`) and daily limit reached (503 `budget_exceeded`).
+  `llm_unavailable`) and daily limit reached (503 `budget_exceeded`). Login has its own:
+  wrong email or password (401 `invalid_credentials`) and too many attempts (429).
 - **Local runs use the fake LLM:** compose takes `LLM_PROVIDER` from `.env`. To be sure no paid
   provider answers while you try the app, start the API with `LLM_PROVIDER=fake docker compose up`.
 

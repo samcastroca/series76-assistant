@@ -246,14 +246,17 @@ Decisión: no se usan embeddings ni pgvector. Los datos son 68 filas con campos 
 
 Android con Kotlin y Jetpack Compose. El emulador corre en Windows, macOS y Linux, lo que facilita que el evaluador reproduzca la app.
 
-**Arquitectura:** MVVM con un solo módulo. Retrofit + kotlinx.serialization para la API, ViewModels con `StateFlow<UiState>` (`Loading`, `Content`, `Error`), inyección manual (un `AppContainer` en la clase `Application`; dos pantallas no justifican Hilt) y Navigation Compose con rutas tipadas. La URL del backend se configura en `local.properties` (`API_BASE_URL`, por defecto `http://10.0.2.2:8000`) y también desde una pantalla de ajustes oculta.
+**Arquitectura:** MVVM con un solo módulo. Retrofit + kotlinx.serialization para la API, ViewModels con `StateFlow<UiState>` (`Loading`, `Content`, `Error`), inyección manual (un `AppContainer` en la clase `Application`; con pocas pantallas no hace falta Hilt) y Navigation Compose con rutas tipadas. La URL del backend se configura en `local.properties` (`API_BASE_URL`, por defecto `http://10.0.2.2:8000`).
+
+**Sesión** ([ADR 0007](adr/0007-app-session-storage.md)): un `SessionManager` de ámbito de aplicación expone un único estado (`Checking`, `SignedOut`, `SignedIn(user)`, `VerifyFailed(error)`) y la raíz de la UI muestra una pantalla por estado. Al abrir la app, un token guardado se valida con `GET /api/auth/me` antes de entrar: un 401 lo descarta y lleva al Login, y cualquier otro fallo ofrece Reintentar o Cerrar sesión. Un interceptor de OkHttp añade `Authorization: Bearer` (salvo en el login) y, ante cualquier 401, cierra la sesión. Cada estado con pantallas tiene su propio `ViewModelStore`, que se borra al salir de él: tras cerrar sesión no queda en memoria nada del usuario anterior ni pila a la que volver. El token, el email y el rol se guardan cifrados con DataStore + Tink (clave en Android Keystore) y se excluyen de los backups; la contraseña no se guarda. La entrada al Debug dependerá solo de `user.isDeveloper`.
 
 | Pantalla | Contenido | Estados de carga y error |
 | --- | --- | --- |
 | Conversaciones | Lista con título, fecha relativa y número de mensajes (el título ya son los primeros caracteres de la primera consulta); botón "Nueva conversación"; deslizar para borrar, con diálogo de confirmación; pull to refresh | Skeleton al cargar; vacío con llamada a la acción; error con "Reintentar"; si falla un refresco o un borrado, la lista sigue visible y un snackbar ofrece "Reintentar" |
 | Chat | Burbujas; tarjetas de producto; tabla comparativa; chips de aclaración; chips de sugerencias | Indicador "escribiendo"; mensaje fallido con reintento; banner sin conexión |
 | Debug | Por cada respuesta: tool calls en orden, argumentos y resultado en JSON plegable, modelo, tokens, costo y latencia | Carga bajo demanda; solo para el rol developer (403 para engineer) |
-| Login | Email y contraseña | Error de credenciales; demasiados intentos (429); token expirado o inválido (401) lleva al login |
+| Login | Email y contraseña con mostrar/ocultar; botón deshabilitado mientras carga. Menú de cuenta en Conversaciones con el email y "Cerrar sesión" | Error de credenciales (401); demasiados intentos (429); sin conexión o servidor caído; un 401 en cualquier pantalla lleva al login |
+| Verificación | Al abrir con token guardado: indicador mientras se valida con `/me` | Si falla por red: "No se pudo verificar tu sesión" con Reintentar y Cerrar sesión |
 
 **Cómo se muestran los productos, según `response_type`:**
 
@@ -302,7 +305,7 @@ Cada caso borde tiene un `response_type` esperado y un test automatizado. La may
 
 **Opcionales recomendados** (bajo costo, buena impresión):
 
-- **Login:** implementado en el backend (ADR 0006). JWT firmado con `JWT_SECRET`, contraseñas con Argon2, 3 usuarios precargados por un seed (`python -m app.db.seed`) y documentados en el README. Los roles son `engineer` y `developer`, y solo el developer ve las trazas. `sessions.user_id` filtra todas las consultas. No hay modo sin autenticación. Falta la pantalla de login de la app.
+- **Login:** implementado en el backend (ADR 0006). JWT firmado con `JWT_SECRET`, contraseñas con Argon2, 3 usuarios precargados por un seed (`python -m app.db.seed`) y documentados en el README. Los roles son `engineer` y `developer`, y solo el developer ve las trazas. `sessions.user_id` filtra todas las consultas. No hay modo sin autenticación. La app tiene pantalla de login y guarda la sesión cifrada (ADR 0007).
 - **Voz:** `SpeechRecognizer` de Android en el dispositivo. El texto transcrito se muestra editable antes de enviarlo. No gasta presupuesto ni requiere cambios en el backend.
 
 **Estructura del repositorio:**
