@@ -232,6 +232,16 @@ screen handles loading and errors, each with its own message and "Retry": no con
 timeout, server down, server error (5xx), assistant unavailable (503 `llm_unavailable`) and
 daily limit reached (503 `budget_exceeded`).
 
+**A short tour** (moto g52 over USB, real agent): sign in, pick a conversation, ask for a
+recommendation (product cards rendered from `products`), mistype a part number (suggestions as
+chips), follow up on it ("cuánto consume?"), and open the answer's trace as the developer.
+
+| Login | Conversations | Recommendation |
+|:-:|:-:|:-:|
+| <img src="docs/screenshots/login.png" width="240" alt="Login screen"> | <img src="docs/screenshots/conversations.png" width="240" alt="Conversations list"> | <img src="docs/screenshots/chat-recommendation.png" width="240" alt="Recommendation with product cards"> |
+| **Part number not found** | **Follow-up** | **Debug (developer)** |
+| <img src="docs/screenshots/chat-not-found.png" width="240" alt="Not found with suggestion chips"> | <img src="docs/screenshots/chat-follow-up.png" width="240" alt="Product card and follow-up question"> | <img src="docs/screenshots/debug.png" width="240" alt="Debug screen with model calls and tool trace"> |
+
 **Opening the Debug screen (developer role only).** Sign in as `developer@example.com`. Each
 assistant answer shows a bug icon that opens its trace, and the chat's ⋮ menu → Debug opens the
 traces of the whole conversation: the tool calls in order (name, latency, arguments and result
