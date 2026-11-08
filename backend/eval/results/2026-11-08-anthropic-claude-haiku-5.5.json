@@ -1,0 +1,2421 @@
+{
+  "date": "2026-11-08",
+  "api_url": "http://localhost:8000",
+  "llm_provider": "openrouter",
+  "agent_model": "anthropic/claude-haiku-5.5",
+  "fallback_model": "z-ai/glm-5.3",
+  "selection": {
+    "fast": false,
+    "categories": null,
+    "ids": null
+  },
+  "summary": {
+    "cases": 37,
+    "cases_passed": 37,
+    "pass_rate": 1.0,
+    "turns": 41,
+    "metrics": {
+      "tool_selection": 1.0,
+      "argument_accuracy": 1.0,
+      "expected_part_numbers": 1.0,
+      "response_type": 1.0,
+      "numeric_faithfulness": 1.0,
+      "coreference": 1.0,
+      "answer_format": 1.0
+    },
+    "latency_ms_p50": 3974,
+    "latency_ms_p95": 7629,
+    "cost_usd_per_turn": "0.001155804878048780487804878049",
+    "cost_usd_total": "0.047388",
+    "turns_with_cost": 41,
+    "tokens_per_turn": 9276.560975609756
+  },
+  "by_category": {
+    "detail": {
+      "cases": 10,
+      "cases_passed": 10,
+      "pass_rate": 1.0,
+      "turns": 10,
+      "metrics": {
+        "tool_selection": 1.0,
+        "argument_accuracy": 1.0,
+        "expected_part_numbers": 1.0,
+        "response_type": 1.0,
+        "numeric_faithfulness": 1.0,
+        "coreference": null,
+        "answer_format": 1.0
+      },
+      "latency_ms_p50": 2962,
+      "latency_ms_p95": 4484,
+      "cost_usd_per_turn": "0.0009257",
+      "cost_usd_total": "0.009257",
+      "turns_with_cost": 10,
+      "tokens_per_turn": 7980.3
+    },
+    "search": {
+      "cases": 6,
+      "cases_passed": 6,
+      "pass_rate": 1.0,
+      "turns": 6,
+      "metrics": {
+        "tool_selection": 1.0,
+        "argument_accuracy": 1.0,
+        "expected_part_numbers": 1.0,
+        "response_type": 1.0,
+        "numeric_faithfulness": 1.0,
+        "coreference": null,
+        "answer_format": 1.0
+      },
+      "latency_ms_p50": 4145,
+      "latency_ms_p95": 8131,
+      "cost_usd_per_turn": "0.001250",
+      "cost_usd_total": "0.007500",
+      "turns_with_cost": 6,
+      "tokens_per_turn": 9575.333333333334
+    },
+    "comparison": {
+      "cases": 4,
+      "cases_passed": 4,
+      "pass_rate": 1.0,
+      "turns": 4,
+      "metrics": {
+        "tool_selection": 1.0,
+        "argument_accuracy": 1.0,
+        "expected_part_numbers": 1.0,
+        "response_type": 1.0,
+        "numeric_faithfulness": 1.0,
+        "coreference": null,
+        "answer_format": 1.0
+      },
+      "latency_ms_p50": 4910,
+      "latency_ms_p95": 8981,
+      "cost_usd_per_turn": "0.00159325",
+      "cost_usd_total": "0.006373",
+      "turns_with_cost": 4,
+      "tokens_per_turn": 11966.75
+    },
+    "multi_turn": {
+      "cases": 4,
+      "cases_passed": 4,
+      "pass_rate": 1.0,
+      "turns": 8,
+      "metrics": {
+        "tool_selection": 1.0,
+        "argument_accuracy": 1.0,
+        "expected_part_numbers": 1.0,
+        "response_type": 1.0,
+        "numeric_faithfulness": 1.0,
+        "coreference": 1.0,
+        "answer_format": 1.0
+      },
+      "latency_ms_p50": 3997,
+      "latency_ms_p95": 7629,
+      "cost_usd_per_turn": "0.001286375",
+      "cost_usd_total": "0.010291",
+      "turns_with_cost": 8,
+      "tokens_per_turn": 10125.25
+    },
+    "invalid_part": {
+      "cases": 2,
+      "cases_passed": 2,
+      "pass_rate": 1.0,
+      "turns": 2,
+      "metrics": {
+        "tool_selection": 1.0,
+        "argument_accuracy": 1.0,
+        "expected_part_numbers": 1.0,
+        "response_type": 1.0,
+        "numeric_faithfulness": 1.0,
+        "coreference": null,
+        "answer_format": 1.0
+      },
+      "latency_ms_p50": 3592,
+      "latency_ms_p95": 4898,
+      "cost_usd_per_turn": "0.001163",
+      "cost_usd_total": "0.002326",
+      "turns_with_cost": 2,
+      "tokens_per_turn": 9868.0
+    },
+    "missing_data": {
+      "cases": 2,
+      "cases_passed": 2,
+      "pass_rate": 1.0,
+      "turns": 2,
+      "metrics": {
+        "tool_selection": 1.0,
+        "argument_accuracy": 1.0,
+        "expected_part_numbers": 1.0,
+        "response_type": 1.0,
+        "numeric_faithfulness": 1.0,
+        "coreference": null,
+        "answer_format": 1.0
+      },
+      "latency_ms_p50": 3369,
+      "latency_ms_p95": 3438,
+      "cost_usd_per_turn": "0.000927",
+      "cost_usd_total": "0.001854",
+      "turns_with_cost": 2,
+      "tokens_per_turn": 7819.5
+    },
+    "ambiguous": {
+      "cases": 2,
+      "cases_passed": 2,
+      "pass_rate": 1.0,
+      "turns": 2,
+      "metrics": {
+        "tool_selection": 1.0,
+        "argument_accuracy": 1.0,
+        "expected_part_numbers": 1.0,
+        "response_type": 1.0,
+        "numeric_faithfulness": 1.0,
+        "coreference": null,
+        "answer_format": 1.0
+      },
+      "latency_ms_p50": 3237,
+      "latency_ms_p95": 4080,
+      "cost_usd_per_turn": "0.0009715",
+      "cost_usd_total": "0.001943",
+      "turns_with_cost": 2,
+      "tokens_per_turn": 8073.5
+    },
+    "no_match": {
+      "cases": 3,
+      "cases_passed": 3,
+      "pass_rate": 1.0,
+      "turns": 3,
+      "metrics": {
+        "tool_selection": 1.0,
+        "argument_accuracy": 1.0,
+        "expected_part_numbers": null,
+        "response_type": 1.0,
+        "numeric_faithfulness": 1.0,
+        "coreference": null,
+        "answer_format": 1.0
+      },
+      "latency_ms_p50": 6213,
+      "latency_ms_p95": 6782,
+      "cost_usd_per_turn": "0.001536",
+      "cost_usd_total": "0.004608",
+      "turns_with_cost": 3,
+      "tokens_per_turn": 11483.333333333334
+    },
+    "certification_tolerance": {
+      "cases": 3,
+      "cases_passed": 3,
+      "pass_rate": 1.0,
+      "turns": 3,
+      "metrics": {
+        "tool_selection": 1.0,
+        "argument_accuracy": 1.0,
+        "expected_part_numbers": 1.0,
+        "response_type": 1.0,
+        "numeric_faithfulness": 1.0,
+        "coreference": null,
+        "answer_format": 1.0
+      },
+      "latency_ms_p50": 2172,
+      "latency_ms_p95": 4587,
+      "cost_usd_per_turn": "0.0009446666666666666666666666667",
+      "cost_usd_total": "0.002834",
+      "turns_with_cost": 3,
+      "tokens_per_turn": 8196.0
+    },
+    "out_of_scope": {
+      "cases": 1,
+      "cases_passed": 1,
+      "pass_rate": 1.0,
+      "turns": 1,
+      "metrics": {
+        "tool_selection": 1.0,
+        "argument_accuracy": null,
+        "expected_part_numbers": 1.0,
+        "response_type": 1.0,
+        "numeric_faithfulness": 1.0,
+        "coreference": null,
+        "answer_format": 1.0
+      },
+      "latency_ms_p50": 1263,
+      "latency_ms_p95": 1263,
+      "cost_usd_per_turn": "0.000402",
+      "cost_usd_total": "0.000402",
+      "turns_with_cost": 1,
+      "tokens_per_turn": 3655.0
+    }
+  },
+  "cases": [
+    {
+      "id": "detail-all-data-no-table",
+      "category": "detail",
+      "fast": false,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Dame los datos del 761A00-11300000/A",
+          "answer": "El **761A00-11300000/A** es un actuador de tamaño 1 con caja a prueba de intemperie (weatherproof), alimentación monofásica de 110 V CA.\n\n- **Servicio on/off:** 700 in-lb (80 Nm), ciclo de trabajo del 40 % y 36 ciclos por hora.\n- **Servicio modulante:** 580 in-lb (65 Nm), ciclo de trabajo del 40 % y 960 arranques por hora.\n- **Velocidad:** 17 s a 60 Hz y 20 s a 50 Hz para un cuarto de vuelta.\n- **Corriente:** 1,20 A a plena carga y 1,40 A de arranque a 60 Hz; 1,10 A y 1,30 A a 50 Hz.\n- **Potencia del motor:** 15 W.\n\nEste modelo tiene certificación CSA, CE y UKCA.",
+          "response_type": "detail",
+          "products": [
+            "761A00-11300000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "761A00-11300000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3566,
+              "output_tokens": 59,
+              "cost_usd": "0.000386"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4083,
+              "output_tokens": 333,
+              "cost_usd": "0.000575"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 4144,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "detail-mixed-language",
+      "category": "detail",
+      "fast": false,
+      "passed": true,
+      "turns": [
+        {
+          "query": "What is the torque del 762B00-11320000/A en Nm?",
+          "answer": "El 762B00-11320000/A tiene dos valores de par según el servicio:\n\n- **On/off:** 200 Nm (1750 in-lb).\n- **Modulante:** 150 Nm (1330 in-lb).\n\nEs una versión weatherproof de 220 V monofásica en AC, y está certificada CSA. Las fichas de la app muestran el resto de especificaciones.",
+          "response_type": "detail",
+          "products": [
+            "762B00-11320000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "762B00-11320000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3570,
+              "output_tokens": 98,
+              "cost_usd": "0.000406"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4128,
+              "output_tokens": 192,
+              "cost_usd": "0.000509"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 3157,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "detail-normalized-part-number",
+      "category": "detail",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "specs del 761a00 11300000 a",
+          "answer": "El modelo **761A00-11300000/A** es un actuador de caja resistente al agua (weatherproof), de serie 1, para alimentación monofásica de 110 V AC y 15 W de potencia de motor.\n\n- **Par de salida:** 700 in-lb (80 Nm) en servicio on/off, y 580 in-lb (65 Nm) en servicio modulante.\n- **Ciclo de trabajo:** 40 %. En on/off son 36 ciclos por hora; en modulante, 960 arranques por hora.\n- **Velocidad:** 17 s a 60 Hz y 20 s a 50 Hz para un cuarto de vuelta.\n- **Corriente:** a 60 Hz, FLA 1,20 A y LRA 1,40 A. A 50 Hz, FLA 1,10 A y LRA 1,30 A.\n- **Certificaciones:** CSA, CE y UKCA.\n\n¿Necesitas revisar otra alimentación o un par diferente para comparar con otros modelos de la serie?",
+          "response_type": "detail",
+          "products": [
+            "761A00-11300000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "761a00 11300000 a"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3562,
+              "output_tokens": 97,
+              "cost_usd": "0.000405"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4117,
+              "output_tokens": 417,
+              "cost_usd": "0.000620"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 4484,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "detail-wp_110v_1ph",
+      "category": "detail",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "¿Cuál es el torque del 761A00-11300000/A?",
+          "answer": "El 761A00-11300000/A tiene dos valores de torque según el tipo de servicio:\n\n- **On/off:** 700 in-lb (80 Nm), con un ciclo de trabajo del 40 %.\n- **Modulante:** 580 in-lb (65 Nm), con un ciclo de trabajo del 40 %.\n\nEs un modelo de carcasa a prueba de intemperie para 110 V monofásico CA.",
+          "response_type": "detail",
+          "products": [
+            "761A00-11300000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "761A00-11300000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3571,
+              "output_tokens": 59,
+              "cost_usd": "0.000387"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4088,
+              "output_tokens": 225,
+              "cost_usd": "0.000521"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 3437,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "detail-wp_220v_1ph",
+      "category": "detail",
+      "fast": false,
+      "passed": true,
+      "turns": [
+        {
+          "query": "What is the stroke time of the 761B00-11320000/A?",
+          "answer": "The 761B00-11320000/A completes a quarter turn in **19 seconds at 60 Hz** and **23 seconds at 50 Hz**. The stroke time depends on the supply frequency, so check which one your site uses.",
+          "response_type": "detail",
+          "products": [
+            "761B00-11320000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "761B00-11320000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3569,
+              "output_tokens": 80,
+              "cost_usd": "0.000397"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4107,
+              "output_tokens": 165,
+              "cost_usd": "0.000493"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 2828,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "detail-wp_220v_3ph",
+      "category": "detail",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "¿Qué potencia tiene el motor del 763C00-11330C00/A?",
+          "answer": "La potencia del motor del 763C00-11330C00/A es de 90 W.\n\nEs un modelo weatherproof, de 220 V trifásico en corriente alterna, con certificación CSA. Si necesita más datos eléctricos, como la corriente a 50 o 60 Hz, puedo consultarlos.",
+          "response_type": "detail",
+          "products": [
+            "763C00-11330C00/A"
+          ],
+          "warnings": [
+            "service_type_unspecified"
+          ],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "763C00-11330C00/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3576,
+              "output_tokens": 60,
+              "cost_usd": "0.000388"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4044,
+              "output_tokens": 106,
+              "cost_usd": "0.000457"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 2532,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "detail-xp_110v_1ph",
+      "category": "detail",
+      "fast": false,
+      "passed": true,
+      "turns": [
+        {
+          "query": "What duty cycle does the 762Y30-11300000/A have?",
+          "answer": "The 762Y30-11300000/A has a duty cycle that depends on the service type:\n\n- **On/off service:** 70%, at 100 cycles per hour.\n- **Modulating service:** 40%, at 960 starts per hour.",
+          "response_type": "detail",
+          "products": [
+            "762Y30-11300000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "762Y30-11300000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3570,
+              "output_tokens": 60,
+              "cost_usd": "0.000387"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4143,
+              "output_tokens": 127,
+              "cost_usd": "0.000478"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 2629,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "detail-xp_220v_1ph",
+      "category": "detail",
+      "fast": false,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Dame las especificaciones del 763X30-11320000/A",
+          "answer": "**763X30-11320000/A** es un actuador de la serie 3, variante X, con carcasa antideflagrante.\n\n- **Alimentación:** 220 V, monofásica, CA.\n- **Potencia del motor:** 40 W.\n- **Par en servicio on/off:** 2300 in-lb (260 Nm), con ciclo de trabajo del 40 % (140 ciclos por hora).\n- **Par en servicio modulante:** 1900 in-lb (220 Nm), con ciclo de trabajo del 40 % (960 arranques por hora).\n- **Velocidad:** 26 s a 60 Hz y 31 s a 50 Hz para un cuarto de vuelta.\n- **Corriente a plena carga (FLA):** 1,30 A a 60 Hz y 50 Hz.\n- **Corriente de rotor bloqueado (LRA):** 1,40 A a 60 Hz y 1,50 A a 50 Hz.\n- **Certificación:** CSA. Las ubicaciones peligrosas indicadas son Clase I, División 1, Grupos C y D, T4, y Ex d IIB T4 Gb, además de Clase I, Zona 1, AEx d IIB T4 Gb.",
+          "response_type": "detail",
+          "products": [
+            "763X30-11320000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "763X30-11320000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3569,
+              "output_tokens": 59,
+              "cost_usd": "0.000386"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4137,
+              "output_tokens": 483,
+              "cost_usd": "0.000655"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 3974,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "detail-xp_24v_modulating",
+      "category": "detail",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "How much current does the 761X30-11370000/A draw?",
+          "answer": "The 761X30-11370000/A draws a full load current (FLA) of 5.00 A at its maximum rated load. Its locked rotor current (LRA) at startup is 12.80 A. It is a 24 V DC explosionproof model with a 40 W motor.",
+          "response_type": "detail",
+          "products": [
+            "761X30-11370000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "761X30-11370000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3567,
+              "output_tokens": 59,
+              "cost_usd": "0.000386"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4027,
+              "output_tokens": 186,
+              "cost_usd": "0.000496"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 2750,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "detail-xp_24v_on_off",
+      "category": "detail",
+      "fast": false,
+      "passed": true,
+      "turns": [
+        {
+          "query": "¿Qué certificaciones tiene el 761Y30-11380000/A?",
+          "answer": "El 761Y30-11380000/A tiene certificación **CSA**. Según los datos del catálogo, está certificado para:\n\n- Clase I, División 1, Grupos C y D; T4\n- Ex d IIB T4 Gb\n- Clase I, Zona 1, AEx d IIB T4 Gb\n\nEs un modelo de carcasa a prueba de explosión, de 24 V, con alimentación CA/CC. Los datos del catálogo no incluyen otras certificaciones, así que no puedo confirmar ninguna adicional.",
+          "response_type": "detail",
+          "products": [
+            "761Y30-11380000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "761Y30-11380000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3575,
+              "output_tokens": 60,
+              "cost_usd": "0.000388"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4043,
+              "output_tokens": 266,
+              "cost_usd": "0.000537"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 2962,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "search-3ph-nm",
+      "category": "search",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Actuador trifásico de 220 V con al menos 1200 Nm",
+          "answer": "Encontré tres actuadores trifásicos de 220 V que cumplen con al menos 1200 Nm:\n\n- **764B00-11330C00/A**: 1200 Nm (10600 in-lb), el más cercano al mínimo pedido. Ciclo de trabajo del 70 %, 43 s por cuarto de vuelta a 50 Hz.\n- **765A00-11330C00/A**: 2000 Nm, ciclo de trabajo del 50 %, 105 s a 50 Hz.\n- **765B00-11330C00/A**: 3000 Nm, ciclo de trabajo del 50 %, 130 s a 50 Hz.\n\nLos tres tienen carcasa resistente a la intemperie y certificación CSA. La tabla trifásica no indica si son de servicio on/off o modulante, así que no puedo confirmarlo para estos modelos. Si lo necesita, dígamelo y lo verifico. Las velocidades indicadas corresponden a 50 Hz; no tengo datos a 60 Hz para estos modelos.\n\n¿Necesita un par mayor, una velocidad concreta o un tipo de servicio específico?",
+          "response_type": "recommendation",
+          "products": [
+            "764B00-11330C00/A",
+            "765A00-11330C00/A",
+            "765B00-11330C00/A"
+          ],
+          "warnings": [
+            "service_type_unspecified"
+          ],
+          "tool_calls": [
+            {
+              "tool": "search_actuators",
+              "args": {
+                "limit": 5,
+                "phase": 3,
+                "voltage_v": 220,
+                "min_torque": "1200",
+                "torque_unit": "nm"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3573,
+              "output_tokens": 213,
+              "cost_usd": "0.000464"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4506,
+              "output_tokens": 521,
+              "cost_usd": "0.000711"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 5119,
+              "output_tokens": 662,
+              "cost_usd": "0.000843"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 8131,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "search-csa-required-on-off",
+      "category": "search",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "I need a CSA certified weatherproof on/off actuator for 220 V single phase with at least 17700 in-lb",
+          "answer": "Two CSA certified, weatherproof, on/off actuators match a 220 V single-phase supply with at least 17,700 in-lb:\n\n- **765A00-11320000/A** gives exactly 17,700 in-lb (2,000 Nm), the minimum you asked for. It runs a quarter turn in 106 seconds at 50 Hz and has a 25% duty cycle.\n- **765B00-11320000/A** gives 26,500 in-lb (3,000 Nm), about 8,800 in-lb above your minimum. It runs a quarter turn in 130 seconds at 50 Hz and also has a 25% duty cycle.\n\nBoth are AC models. The speeds are given for 50 Hz only, so confirm your site frequency before relying on them. If you need more torque margin, the 765B is the better fit. If the 765A's exact rating is enough, it is the smaller choice.",
+          "response_type": "recommendation",
+          "products": [
+            "765A00-11320000/A",
+            "765B00-11320000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "search_actuators",
+              "args": {
+                "phase": 1,
+                "enclosure": "weatherproof",
+                "voltage_v": 220,
+                "min_torque": "17700",
+                "torque_unit": "in_lb",
+                "csa_required": true,
+                "service_type": "on_off"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3587,
+              "output_tokens": 205,
+              "cost_usd": "0.000461"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4322,
+              "output_tokens": 336,
+              "cost_usd": "0.000600"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 3786,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "search-wp110-modulating-inlb",
+      "category": "search",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Necesito un actuador weatherproof de 110 V monofásico, modulante, con al menos 8230 in-lb",
+          "answer": "Encontré tres actuadores weatherproof, modulantes, para 110 V monofásico con al menos 8230 in-lb:\n\n- **764B00-11300000/A**: 8230 in-lb (930 Nm), el mínimo exacto que pediste. Tiempo de 43 s por cuarto de vuelta.\n- **765A00-11300000/A**: 15000 in-lb (1700 Nm). Tiempo de 106 s.\n- **765B00-11300000/A**: 22550 in-lb (2550 Nm). Tiempo de 130 s.\n\nLos tres tienen un ciclo de trabajo del 35 %. Los tiempos son a 50 Hz; a 60 Hz serían distintos, y no lo pude verificar porque no indiqué la frecuencia. Si me dices si tu red es de 50 o 60 Hz, lo consulto. Los tres están certificados CSA.\n\nSi necesitas un margen de par por encima del mínimo, el 765A00 es la opción más cercana. ¿Tu red es de 50 o 60 Hz?",
+          "response_type": "recommendation",
+          "products": [
+            "764B00-11300000/A",
+            "765A00-11300000/A",
+            "765B00-11300000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "search_actuators",
+              "args": {
+                "phase": 1,
+                "enclosure": "weatherproof",
+                "voltage_v": 110,
+                "min_torque": "8230",
+                "torque_unit": "in_lb",
+                "service_type": "modulating"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3588,
+              "output_tokens": 181,
+              "cost_usd": "0.000449"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4464,
+              "output_tokens": 495,
+              "cost_usd": "0.000694"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 4952,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "search-wp220-on-off-nm",
+      "category": "search",
+      "fast": false,
+      "passed": true,
+      "turns": [
+        {
+          "query": "I need a weatherproof on/off actuator, 220 V single phase, at least 8000 Nm",
+          "answer": "Two weatherproof, on/off, 220 V single-phase models meet at least 8000 Nm:\n\n- **767B00-11320000/A** gives 8000 Nm (70800 in-lb), which is exactly your minimum. It has a 40% duty cycle and a stroke time of 116 s at 50 Hz.\n- **767C00-11320000/A** gives 9000 Nm (79700 in-lb), 1000 Nm above your minimum. It has a 40% duty cycle and a stroke time of 117 s at 50 Hz.\n\nBoth are AC, and both are not CSA certified. The speeds are published for 50 Hz only, so if your supply is 60 Hz, the stroke time is not in these results. If you need CSA certification, neither model qualifies.",
+          "response_type": "recommendation",
+          "products": [
+            "767B00-11320000/A",
+            "767C00-11320000/A"
+          ],
+          "warnings": [
+            "not_csa_certified"
+          ],
+          "tool_calls": [
+            {
+              "tool": "search_actuators",
+              "args": {
+                "phase": 1,
+                "enclosure": "weatherproof",
+                "voltage_v": 220,
+                "min_torque": "8000",
+                "torque_unit": "nm",
+                "service_type": "on_off"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3581,
+              "output_tokens": 251,
+              "cost_usd": "0.000484"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4376,
+              "output_tokens": 290,
+              "cost_usd": "0.000583"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 3768,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "search-xp110-on-off-inlb",
+      "category": "search",
+      "fast": false,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Busco un actuador a prueba de explosión, 110 V, on/off, de mínimo 9600 in-lb",
+          "answer": "Encontré tres actuadores que cumplen todos tus requisitos: a prueba de explosión, 110 V monofásico en corriente alterna, on/off y al menos 9600 in-lb.\n\n- **764Y30-11300000/A**: 9600 in-lb (1100 Nm), justo en tu mínimo. Ciclo de trabajo 30 %, 37 s por cuarto de vuelta a 50 Hz.\n- **765X30-11300000/A**: 17500 in-lb (2000 Nm), con 7900 in-lb de margen sobre tu requisito. 112 s a 50 Hz.\n- **765Y30-11300000/A**: 25900 in-lb (3000 Nm), con 16300 in-lb de margen. 112 s a 50 Hz.\n\nLos tres aparecen como certificados CSA. La velocidad depende de la frecuencia de la red, y los datos que tengo son a 50 Hz. Si tu red es de 60 Hz, dime y busco los valores correspondientes.",
+          "response_type": "recommendation",
+          "products": [
+            "764Y30-11300000/A",
+            "765X30-11300000/A",
+            "765Y30-11300000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "search_actuators",
+              "args": {
+                "enclosure": "explosionproof",
+                "voltage_v": 110,
+                "min_torque": "9600",
+                "torque_unit": "in_lb",
+                "service_type": "on_off"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3587,
+              "output_tokens": 206,
+              "cost_usd": "0.000462"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4491,
+              "output_tokens": 453,
+              "cost_usd": "0.000676"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 4145,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "search-xp24-modulating-nm",
+      "category": "search",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Necesito un actuador modulante a prueba de explosión de 24 VDC con al menos 145 Nm",
+          "answer": "Encontré dos actuadores que cumplen los requisitos: modulantes, a prueba de explosión, 24 VDC y al menos 145 Nm.\n\n- **762Y30-11370000/A**: 145 Nm (1270 in-lb), exactamente en el mínimo que pidió. Ciclo de trabajo del 40 % y 22 s para un cuarto de vuelta.\n- **763X30-11370000/A**: 220 Nm (1900 in-lb), con 75 Nm de margen. Ciclo de trabajo del 35 % y 32 s para un cuarto de vuelta.\n\nAmbos están certificados CSA según los datos del catálogo. Si su par resistente calculado es de 145 Nm, el 762Y30 lo cubre justo, así que conviene el 763X30 si quiere un margen de seguridad.",
+          "response_type": "recommendation",
+          "products": [
+            "762Y30-11370000/A",
+            "763X30-11370000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "search_actuators",
+              "args": {
+                "enclosure": "explosionproof",
+                "voltage_v": 24,
+                "min_torque": "145",
+                "torque_unit": "nm",
+                "current_type": "DC",
+                "service_type": "modulating"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3585,
+              "output_tokens": 180,
+              "cost_usd": "0.000449"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4291,
+              "output_tokens": 389,
+              "cost_usd": "0.000624"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 4291,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "comparison-wp_110v_1ph",
+      "category": "comparison",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Compara el 761A00-11300000/A con el 761B00-11300000/A",
+          "answer": "Los dos modelos son de tamaño 1, versión para intemperie (weatherproof), con alimentación monofásica de 110 V CA, motor de 15 W, duty cycle del 40 % y certificación CSA, CE y UKCA.\n\nLas diferencias están en el par y la velocidad:\n\n- **Par:** el 761B00-11300000/A entrega más par en ambos servicios. En on/off, 880 in-lb (100 Nm) frente a 700 in-lb (80 Nm) del 761A00-11300000/A. En modulante, 620 in-lb (70 Nm) frente a 580 in-lb (65 Nm).\n- **Velocidad:** el 761A00-11300000/A es más rápido. A 60 Hz tarda 17 s frente a 19 s, y a 50 Hz tarda 20 s frente a 23 s.\n- **Corriente:** el 761B00-11300000/A consume algo más a plena carga. A 60 Hz, la corriente a plena carga es 1,30 A frente a 1,20 A. La corriente de arranque a 60 Hz es 1,40 A en ambos.\n- **Ciclos:** en on/off, el 761A00-11300000/A admite 36 ciclos por hora y el 761B00-11300000/A, 31.\n\nSi necesita más par y acepta una maniobra algo más lenta, el 761B00-11300000/A es la opción. Si prioriza la velocidad y el menor consumo, el 761A00-11300000/A encaja mejor. Ambos son CSA. No tengo datos de precio ni de plazos de entrega.",
+          "response_type": "comparison",
+          "products": [
+            "761A00-11300000/A",
+            "761B00-11300000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "761A00-11300000/A"
+              }
+            },
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "761B00-11300000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3575,
+              "output_tokens": 150,
+              "cost_usd": "0.000433"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4691,
+              "output_tokens": 720,
+              "cost_usd": "0.000829"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 5503,
+              "output_tokens": 804,
+              "cost_usd": "0.000952"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 8981,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "comparison-wp_220v_3ph",
+      "category": "comparison",
+      "fast": false,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Compare 763A00-11330C00/A and 763B00-11330C00/A",
+          "answer": "Both models are weatherproof, 220 V three-phase AC, and both are CSA, CE and UKCA certified. They share the same speed and duty cycle, and differ mainly in torque and motor size.\n\n**763A00-11330C00/A** is the lower-torque model: 2650 in-lb (300 Nm), with a 40 W motor. It draws 1.00 A full load and 1.20 A at startup. Stroke time is 26 s at 60 Hz and 32 s at 50 Hz.\n\n**763B00-11330C00/A** is the higher-torque model: 4400 in-lb (500 Nm), with a 90 W motor. It draws 2.00 A full load and 2.40 A at startup. Stroke time is the same, 26 s at 60 Hz and 32 s at 50 Hz.\n\nBoth have a 70% duty cycle, rated for unspecified service. The three-phase data does not say whether a rating is on/off or modulating, so I can't confirm which service type either model suits.\n\nIf you need more torque, the B model gives nearly twice the torque. If your supply or power budget is tighter, the A model draws about half the current.",
+          "response_type": "comparison",
+          "products": [
+            "763B00-11330C00/A",
+            "763A00-11330C00/A"
+          ],
+          "warnings": [
+            "service_type_unspecified"
+          ],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "763B00-11330C00/A"
+              }
+            },
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "763A00-11330C00/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3575,
+              "output_tokens": 142,
+              "cost_usd": "0.000429"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4583,
+              "output_tokens": 459,
+              "cost_usd": "0.000688"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 4910,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "comparison-xp_220v_1ph",
+      "category": "comparison",
+      "fast": false,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Compara el 761X30-11320000/A con el 761Y30-11320000/A",
+          "answer": "Los dos modelos son de la misma serie 76, en versión antideflagrante, con certificación CSA, alimentación monofásica de 220 V CA y motor de 15 W. La diferencia está en el par de salida.\n\n- **761X30-11320000/A:** 690 in-lb (80 Nm) en servicio on/off y 550 in-lb (65 Nm) en servicio modulante.\n- **761Y30-11320000/A:** 790 in-lb (90 Nm) en servicio on/off y 630 in-lb (72 Nm) en servicio modulante.\n\nEl resto de los datos es idéntico en ambos: ciclo de trabajo del 40 %, 190 ciclos por hora en on/off, 960 arranques por hora en modulante, tiempo de carrera de 20 s a 60 Hz o 23 s a 50 Hz, consumo a plena carga de 0,60 A y de arranque de 0,70 A.\n\nSi necesita más par, el Y es la opción. Si el par del X ya cubre su válvula o compuerta, el X ofrece la misma velocidad y las mismas condiciones eléctricas con menor par.",
+          "response_type": "comparison",
+          "products": [
+            "761Y30-11320000/A",
+            "761X30-11320000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "761Y30-11320000/A"
+              }
+            },
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "761X30-11320000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3576,
+              "output_tokens": 146,
+              "cost_usd": "0.000431"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4790,
+              "output_tokens": 602,
+              "cost_usd": "0.000780"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 5484,
+              "output_tokens": 478,
+              "cost_usd": "0.000787"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 6921,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "comparison-xp_24v_on_off",
+      "category": "comparison",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Compare 761X30-11380000/A and 761Y30-11380000/A",
+          "answer": "Both are size 1 explosionproof 24 V AC/DC on/off models with CSA certification and the same hazardous-location ratings. They differ in torque, speed and current.\n\n**761X30-11380000/A** gives the lower torque: 620 in-lb (70 Nm) at 30% duty cycle, 350 cycles per hour. It runs faster at 17 seconds per quarter turn, with a full load current of 5.00 A and a locked rotor current of 12.80 A.\n\n**761Y30-11380000/A** gives more torque: 700 in-lb (80 Nm) at 30% duty cycle, 300 cycles per hour. It is slower at 20 seconds per quarter turn, with a full load current of 6.30 A and the same locked rotor current of 12.80 A.\n\nBoth have a 40 W motor. If you need more torque for the valve or damper, the Y variant fits. If you need faster stroke times, the X variant fits.",
+          "response_type": "comparison",
+          "products": [
+            "761Y30-11380000/A",
+            "761X30-11380000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "761Y30-11380000/A"
+              }
+            },
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "761X30-11380000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3574,
+              "output_tokens": 116,
+              "cost_usd": "0.000415"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4552,
+              "output_tokens": 347,
+              "cost_usd": "0.000629"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 3396,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "multi-turn-power-followup",
+      "category": "multi_turn",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "¿Qué torque tiene el 762A00-11320000/A?",
+          "answer": "El **762A00-11320000/A** tiene dos valores de torque según el tipo de servicio:\n\n- **Servicio on/off** (abrir o cerrar): 1330 in-lb (150 Nm).\n- **Servicio modulante** (posicionamiento en cualquier punto del cuarto de vuelta): 1150 in-lb (130 Nm).\n\nEs un modelo weatherproof de 220 V monofásico en corriente alterna.",
+          "response_type": "detail",
+          "products": [
+            "762A00-11320000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "762A00-11320000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3571,
+              "output_tokens": 59,
+              "cost_usd": "0.000387"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4090,
+              "output_tokens": 236,
+              "cost_usd": "0.000527"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 2957,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        },
+        {
+          "query": "¿Y cuánta corriente consume?",
+          "answer": "El **762A00-11320000/A** consume **1,00 A** a plena carga (FLA) tanto a 50 Hz como a 60 Hz.\n\nEn el arranque (LRA) consume 1,20 A a 60 Hz y 1,10 A a 50 Hz.\n\nLa velocidad depende de la frecuencia: 18 segundos por cuarto de vuelta a 60 Hz y 21 segundos a 50 Hz.",
+          "response_type": "detail",
+          "products": [
+            "762A00-11320000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "762A00-11320000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3759,
+              "output_tokens": 181,
+              "cost_usd": "0.000466"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4400,
+              "output_tokens": 289,
+              "cost_usd": "0.000585"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 4713,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": true,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "multi-turn-search-then-compare",
+      "category": "multi_turn",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Busco un actuador a prueba de explosión, 220 V, modulante, de al menos 1600 Nm",
+          "answer": "Encontré dos modelos que cumplen todos sus requisitos: a prueba de explosión, 220 V monofásico AC, servicio modulante y al menos 1600 Nm.\n\n- **765X30-11320000/A**: 1600 Nm (14000 in-lb), justo en el mínimo que pidió. Velocidad de 112 s a 50 Hz y ciclo de trabajo del 30 %.\n- **765Y30-11320000/A**: 2400 Nm (20720 in-lb), con un margen de 800 Nm sobre su requisito. Velocidad de 112 s a 50 Hz y ciclo de trabajo del 30 %.\n\nAmbos están certificados CSA. La velocidad indicada corresponde a una alimentación de 50 Hz. Si su red es de 60 Hz, dígame y consulto ese dato.",
+          "response_type": "recommendation",
+          "products": [
+            "765X30-11320000/A",
+            "765Y30-11320000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "search_actuators",
+              "args": {
+                "enclosure": "explosionproof",
+                "voltage_v": 220,
+                "min_torque": "1600",
+                "torque_unit": "nm",
+                "service_type": "modulating"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3585,
+              "output_tokens": 203,
+              "cost_usd": "0.000460"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4316,
+              "output_tokens": 476,
+              "cost_usd": "0.000670"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4890,
+              "output_tokens": 608,
+              "cost_usd": "0.000793"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 7629,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        },
+        {
+          "query": "Compara esos dos",
+          "answer": "Ambos modelos son de la misma serie y tamaño, con la misma carcasa a prueba de explosión, alimentación monofásica de 220 V AC, motor de 180 W, ciclo de trabajo del 30 % y certificación CSA. Los dos tienen las mismas zonas peligrosas certificadas.\n\nLa diferencia principal es el par en servicio modulante: el 765X30 da 1600 Nm (14000 in-lb) y el 765Y30 da 2400 Nm (20720 in-lb).\n\nEn cuanto a consumo, el 765Y30 requiere más corriente a plena carga: 3,30 A a 50 Hz frente a 2,20 A del 765X30, y 3,40 A frente a 2,40 A a 60 Hz. La corriente de arranque (LRA) es casi igual en ambos: 3,90 A a 50 Hz y 3,80 A a 60 Hz.\n\nLa velocidad es la misma en los dos: 112 s a 50 Hz y 93 s a 60 Hz.\n\nSi su red es de 60 Hz, ya tiene el dato: ambos modelos completan el cuarto de vuelta en 93 s.\n\nSi necesita una fuerza mayor que 1600 Nm, el 765Y30 es la opción adecuada, con un consumo algo mayor. Si 1600 Nm le bastan, el 765X30 tiene un consumo menor.",
+          "response_type": "comparison",
+          "products": [
+            "765X30-11320000/A",
+            "765Y30-11320000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "765X30-11320000/A"
+              }
+            },
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "765Y30-11320000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3914,
+              "output_tokens": 256,
+              "cost_usd": "0.000519"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 5246,
+              "output_tokens": 938,
+              "cost_usd": "0.000994"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 6725,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": true,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "multi-turn-sibling-variant",
+      "category": "multi_turn",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Dame los datos del 761A00-11300000/A",
+          "answer": "El **761A00-11300000/A** es un actuador de tamaño 1 con enclosure weatherproof (uso industrial general), alimentación monofásica de 110 V AC y 15 W de potencia de motor.\n\n- **Par de salida:** 700 in-lb (80 Nm) en servicio on/off y 580 in-lb (65 Nm) en servicio modulante.\n- **Ciclo de trabajo:** 40 % en ambos servicios. En on/off son 36 ciclos por hora; en modulante, 960 arranques por hora.\n- **Velocidad y corriente:** a 60 Hz, 17 s por cuarto de vuelta, con 1,20 A de FLA y 1,40 A de LRA. A 50 Hz, 20 s, con 1,10 A de FLA y 1,30 A de LRA.\n- **Certificaciones:** CSA, CE y UKCA.\n\n¿Necesita comprobar otro modelo o buscar actuadores para una alimentación o un par concretos?",
+          "response_type": "detail",
+          "products": [
+            "761A00-11300000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "761A00-11300000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3566,
+              "output_tokens": 59,
+              "cost_usd": "0.000386"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4083,
+              "output_tokens": 430,
+              "cost_usd": "0.000623"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 3997,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        },
+        {
+          "query": "¿Y el modelo B del mismo tamaño?",
+          "answer": "El modelo **761B00-11300000/A** es la variante B de tamaño 1. Tiene la misma alimentación que el 761A (monofásica de 110 V AC, enclosure weatherproof y 15 W de motor), pero con más par en on/off y menos en modulante:\n\n- **Par de salida:** 880 in-lb (100 Nm) en on/off y 620 in-lb (70 Nm) en modulante. El 761A daba 700 in-lb (80 Nm) y 580 in-lb (65 Nm).\n- **Ciclo de trabajo:** 40 % en ambos servicios. En on/off son 31 ciclos por hora (el 761A tenía 36); en modulante, 960 arranques por hora, igual que el 761A.\n- **Velocidad y corriente:** a 60 Hz, 19 s por cuarto de vuelta, con 1,30 A de FLA y 1,40 A de LRA. A 50 Hz, 23 s, con 1,20 A de FLA y 1,30 A de LRA. El 761A era más rápido (17 s a 60 Hz y 20 s a 50 Hz).\n- **Certificaciones:** CSA, CE y UKCA.\n\nSi lo que busca es más par, el 761B lo ofrece; si necesita un arranque más rápido, el 761A es mejor opción.",
+          "response_type": "detail",
+          "products": [
+            "761B00-11300000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "761A00-11300000/B"
+              }
+            },
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "761B00-11300000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3949,
+              "output_tokens": 181,
+              "cost_usd": "0.000485"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4549,
+              "output_tokens": 229,
+              "cost_usd": "0.000569"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 5236,
+              "output_tokens": 557,
+              "cost_usd": "0.000802"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 6863,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": true,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "multi-turn-speed-50hz",
+      "category": "multi_turn",
+      "fast": false,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Tell me about the 763X30-11300000/A",
+          "answer": "The 763X30-11300000/A is a Series 76 size 3 explosionproof actuator for a 110 V single-phase AC supply. It is CSA certified and rated for Class I, Division 1, Groups C and D, and for Ex d IIB T4 Gb and Class I, Zone 1 locations.\n\n- **On/off service:** 2640 in-lb (300 Nm) output torque, 70% duty cycle, 80 cycles per hour.\n- **Modulating service:** 2110 in-lb (240 Nm) output torque, 40% duty cycle, 960 starts per hour.\n- **Speed:** 26 seconds per quarter turn at 60 Hz, 31 seconds at 50 Hz.\n- **Current:** full load current is 2.30 A at 60 Hz and 2.00 A at 50 Hz. Locked rotor current is 2.90 A at 60 Hz and 3.00 A at 50 Hz.\n- **Motor power:** 40 W.\n\nIf you tell me your torque requirement and whether you need on/off or modulating service, I can check whether this model fits.",
+          "response_type": "detail",
+          "products": [
+            "763X30-11300000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "763X30-11300000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3565,
+              "output_tokens": 59,
+              "cost_usd": "0.000386"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4133,
+              "output_tokens": 431,
+              "cost_usd": "0.000629"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 3928,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        },
+        {
+          "query": "What about its speed at 50 Hz?",
+          "answer": "At 50 Hz, the 763X30-11300000/A takes 31 seconds to complete a quarter turn. At 60 Hz it is 26 seconds.",
+          "response_type": "detail",
+          "products": [
+            "763X30-11300000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "763X30-11300000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3966,
+              "output_tokens": 231,
+              "cost_usd": "0.000512"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4706,
+              "output_tokens": 55,
+              "cost_usd": "0.000498"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 3200,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": true,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "not-found-invented-part",
+      "category": "invalid_part",
+      "fast": false,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Dame los datos del 769Z00-99999999/Q",
+          "answer": "No encuentro ese modelo en el catálogo de la Serie 76, y no aparecieron números de pieza similares. Revisa que el código esté completo y escrito correctamente. Si me indicas la alimentación disponible (voltaje, monofásica o trifásica, AC o DC), el par que necesitas o el tipo de servicio, busco actuadores que cumplan esos requisitos.",
+          "response_type": "not_found",
+          "products": [],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "769Z00-99999999/Q"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3568,
+              "output_tokens": 61,
+              "cost_usd": "0.000387"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3712,
+              "output_tokens": 149,
+              "cost_usd": "0.000446"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3958,
+              "output_tokens": 282,
+              "cost_usd": "0.000537"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 4898,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "not-found-summary-example",
+      "category": "invalid_part",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "What is the torque of 761A00-11380000/A?",
+          "answer": "I couldn't find 761A00-11380000/A in the catalog, so I don't have its torque. Check the part number for a typo.\n\nSome similar part numbers do exist:\n\n- 761A00-11300000/A: weatherproof, 110 V single-phase AC\n- 761A00-11320000/A: weatherproof, 220 V single-phase AC\n- 761A00-11330C00/A: weatherproof, 220 V three-phase AC\n- 761X30-11380000/A: explosionproof, 24 V AC/DC\n- 761Y30-11380000/A: explosionproof, 24 V AC/DC\n\nIf one of these is the model you mean, tell me and I'll look up its torque. If you don't have the exact number, tell me the supply voltage, whether you need on/off or modulating service, and the torque your valve or damper needs, and I'll search for a match.",
+          "response_type": "not_found",
+          "products": [],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "761A00-11380000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3566,
+              "output_tokens": 59,
+              "cost_usd": "0.000386"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4052,
+              "output_tokens": 329,
+              "cost_usd": "0.000570"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 3592,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing-data-1",
+      "category": "missing_data",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "¿Qué torque tiene el 761A00-11330C00/A?",
+          "answer": "El modelo **761A00-11330C00/A** existe en el catálogo, pero **no tiene datos de torque publicados**, así que no puedo darte su valor.\n\nLo que sí consta en su ficha es que es de carcasa weatherproof, alimentación trifásica de 220 V en CA y que tiene certificaciones CSA, CE y UKCA. Como no tiene datos publicados, tampoco puedo confirmar su velocidad, corriente ni potencia del motor.\n\nSi me indicas el torque que necesitas (en in-lb o Nm), puedo buscar otros actuadores de la serie que cumplan con esa exigencia y con tu alimentación.",
+          "response_type": "no_data",
+          "products": [
+            "761A00-11330C00/A"
+          ],
+          "warnings": [
+            "no_published_data"
+          ],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "761A00-11330C00/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3572,
+              "output_tokens": 60,
+              "cost_usd": "0.000387"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3889,
+              "output_tokens": 327,
+              "cost_usd": "0.000552"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 3369,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing-data-2",
+      "category": "missing_data",
+      "fast": false,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Give me the specs of 762B00-11330C00/A",
+          "answer": "Part number **762B00-11330C00/A** is in the catalog, but its performance data is not published, so I can't give torque, speed, current, duty cycle or motor power for it.\n\nWhat the catalog does list:\n- Series size 2, variant B\n- Weatherproof enclosure\n- 220 V, three-phase AC supply\n- Certifications: CSA, CE and UKCA\n\nThe data tables contain no figures for this model. I can't say whether it fits your application's torque or speed needs. If you tell me the torque, speed, or supply you need, I can search for published alternatives.",
+          "response_type": "no_data",
+          "products": [
+            "762B00-11330C00/A"
+          ],
+          "warnings": [
+            "no_published_data"
+          ],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "762B00-11330C00/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3567,
+              "output_tokens": 60,
+              "cost_usd": "0.000387"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3884,
+              "output_tokens": 280,
+              "cost_usd": "0.000528"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 3438,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "ambiguous-generic-request",
+      "category": "ambiguous",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Necesito un actuador eléctrico",
+          "answer": "Con gusto le ayudo a encontrar el actuador adecuado. Para buscar en las tablas de datos, necesito saber:\n\n1. **Alimentación disponible**: las opciones del catálogo son 24 V CA/CC, 110 V monofásico, 220 V monofásico y 220 V trifásico (este último solo en carcasa resistente a la intemperie).\n2. **Tipo de servicio**: on/off (pasa entre abierto y cerrado) o modulante (se detiene en cualquier punto de su cuarto de vuelta, para control preciso de flujo).\n3. **Carcasa**: resistente a la intemperie (uso industrial general) o a prueba de explosión (zonas con gases o polvo inflamables).\n4. **Par de salida requerido**, en lb-pulg o Nm.\n\nCon lo que me indique, busco los modelos que cumplan sus requisitos.",
+          "response_type": "clarification",
+          "products": [],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "list_catalog_options",
+              "args": {
+                "field": "power_supply"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3562,
+              "output_tokens": 207,
+              "cost_usd": "0.000460"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4266,
+              "output_tokens": 303,
+              "cost_usd": "0.000578"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 4080,
+          "scores": {
+            "tool_selection": null,
+            "argument_accuracy": null,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "ambiguous-partial-part",
+      "category": "ambiguous",
+      "fast": false,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Dame los datos del 763A",
+          "answer": "El número 763A coincide con tres actuadores. ¿Cuál necesita?\n\n- **763A00-11300000/A**: carcasa weatherproof, 110 V monofásico, AC.\n- **763A00-11320000/A**: carcasa weatherproof, 220 V monofásico, AC.\n- **763A00-11330C00/A**: carcasa weatherproof, 220 V trifásico, AC.\n\nDígame el número completo y le muestro sus datos (par, velocidad, corriente, potencia y certificaciones).",
+          "response_type": "clarification",
+          "products": [],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "763A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3559,
+              "output_tokens": 108,
+              "cost_usd": "0.000410"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3940,
+              "output_tokens": 202,
+              "cost_usd": "0.000495"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 3237,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "no-match-24v-modulating-ac",
+      "category": "no_match",
+      "fast": false,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Necesito un actuador modulante de 24 VAC",
+          "answer": "No encontré ningún actuador Series 76 modulante que funcione con 24 VAC. En los datos, los modelos modulantes en 24 V son de corriente continua (DC), no alterna.\n\nLas alternativas más cercanas, que no cumplen el requisito de corriente alterna, son:\n\n- **761X30-11370000/A**: modulante, 24 V DC, carcasa antideflagrante, certificado CSA, 560 in-lb (65 Nm), ciclo de trabajo 30 %, 17 s por cuarto de vuelta.\n- **762X30-11370000/A**: modulante, 24 V DC, carcasa antideflagrante, certificado CSA, 1150 in-lb (130 Nm), ciclo de trabajo 40 %, 22 s por cuarto de vuelta.\n\nLos modelos de 24 V que sí son de corriente alterna o alterna/continua son de tipo on/off, no modulante. Para modulante con alterna, los datos solo muestran opciones de 110 V y 220 V monofásicos.\n\nPara afinar la búsqueda, ¿me puede indicar qué par necesita, si la carcasa debe ser antideflagrante o intemperie, y si puede usar alimentación DC o tiene que ser sí o sí 24 VAC?",
+          "response_type": "no_match",
+          "products": [
+            "761X30-11380000/A",
+            "761X30-11370000/A",
+            "761X30-11300000/A",
+            "761Y30-11380000/A",
+            "761Y30-11370000/A",
+            "761X30-11320000/A",
+            "762X30-11380000/A",
+            "762X30-11370000/A",
+            "761A00-11300000/A",
+            "762Y30-11380000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "search_actuators",
+              "args": {
+                "limit": 10,
+                "voltage_v": 24,
+                "current_type": "AC",
+                "service_type": "modulating"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3567,
+              "output_tokens": 173,
+              "cost_usd": "0.000443"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 5685,
+              "output_tokens": 695,
+              "cost_usd": "0.000916"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 5662,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": null,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "no-match-3ph-modulating",
+      "category": "no_match",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Necesito un actuador modulante trifásico de 220 V",
+          "answer": "No encontré ningún Series 76 que sea modulante, trifásico y de 220 V. Las tablas de trifásico solo tienen valores de servicio sin especificar, así que no puedo confirmar que alguno sea modulante.\n\nEstas son las alternativas más cercanas, que no cumplen del todo tu requisito:\n\n- **763A00-11330C00/A** (trifásico, 220 V, carcasa a prueba de intemperie): servicio sin especificar, 2650 in-lb (300 Nm), ciclo de trabajo 70 %, 32 s a 50 Hz. Tiene certificación CSA.\n- **763B00-11330C00/A** (trifásico, 220 V, carcasa a prueba de intemperie): servicio sin especificar, 4400 in-lb (500 Nm), ciclo de trabajo 70 %, 32 s a 50 Hz. Tiene certificación CSA.\n- **763C00-11330C00/A** (trifásico, 220 V, carcasa a prueba de intemperie): servicio sin especificar, 5300 in-lb (600 Nm), ciclo de trabajo 70 %, 39 s a 50 Hz. Tiene certificación CSA.\n- **761A00-11320000/A** (monofásico, 220 V, modulante, carcasa a prueba de intemperie): 580 in-lb (65 Nm), ciclo de trabajo 40 %, 20 s a 50 Hz. Tiene certificación CSA.\n- **761X30-11320000/A** (monofásico, 220 V, modulante, carcasa antiexplosiva): 550 in-lb (65 Nm), ciclo de trabajo 40 %, 23 s a 50 Hz. Tiene certificación CSA.\n\nPara orientarte mejor, necesito saber:\n\n1. ¿El par que necesitas (en in-lb o Nm)?\n2. ¿Te sirve un modelo monofásico si el modulante es imprescindible, o necesitas sí o sí trifásico?\n3. ¿Necesitas un entorno clasificado como antiexplosivo?\n\nLos datos de precio y disponibilidad no están en las tablas, así que tendrás que consultarlos con tu proveedor.",
+          "response_type": "no_match",
+          "products": [
+            "763A00-11330C00/A",
+            "761X30-11320000/A",
+            "763B00-11330C00/A",
+            "761A00-11320000/A",
+            "763C00-11330C00/A"
+          ],
+          "warnings": [
+            "service_type_unspecified"
+          ],
+          "tool_calls": [
+            {
+              "tool": "search_actuators",
+              "args": {
+                "phase": 3,
+                "voltage_v": 220,
+                "service_type": "modulating"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3569,
+              "output_tokens": 236,
+              "cost_usd": "0.000475"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4902,
+              "output_tokens": 1020,
+              "cost_usd": "0.001000"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 6782,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": null,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "no-match-voltage-out-of-tolerance",
+      "category": "no_match",
+      "fast": false,
+      "passed": true,
+      "turns": [
+        {
+          "query": "I need an actuator for a 380 V supply",
+          "answer": "No Series 76 actuator in the data tables runs on 380 V, so I can't offer a match at that supply.\n\nThe closest options are for other supplies, and they do not meet your voltage requirement:\n- 761A00-11300000/A and 761A00-11320000/A (weatherproof, single-phase 110 V or 220 V AC, modulating, about 65 Nm).\n- 761X30-11300000/A and 761X30-11320000/A (explosionproof, single-phase 110 V or 220 V AC, modulating, about 65 Nm). Both are CSA certified.\n- 761X30-11370000/A (explosionproof, 24 V DC, modulating).\n\nThe catalog's three-phase supply is 220 V, not 380 V, and its ratings do not state whether they are on/off or modulating.\n\nIf you can work with a different supply, or your 380 V feeds a transformer, tell me the torque you need, the service type (on/off or modulating) and the enclosure, and I'll search again.",
+          "response_type": "no_match",
+          "products": [
+            "761X30-11300000/A",
+            "761X30-11320000/A",
+            "761X30-11370000/A",
+            "761A00-11300000/A",
+            "761A00-11320000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "search_actuators",
+              "args": {
+                "voltage_v": 380
+              }
+            },
+            {
+              "tool": "list_catalog_options",
+              "args": {
+                "field": "power_supply"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3563,
+              "output_tokens": 98,
+              "cost_usd": "0.000405"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4716,
+              "output_tokens": 327,
+              "cost_usd": "0.000635"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 5540,
+              "output_tokens": 359,
+              "cost_usd": "0.000734"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 6213,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": null,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "csa-not-certified-1",
+      "category": "certification_tolerance",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "¿El 766A00-11320000/A tiene certificación CSA?",
+          "answer": "No, el 766A00-11320000/A no tiene certificación CSA. Sus certificaciones publicadas son CE y UKCA.",
+          "response_type": "detail",
+          "products": [
+            "766A00-11320000/A"
+          ],
+          "warnings": [
+            "not_csa_certified"
+          ],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "766A00-11320000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3572,
+              "output_tokens": 59,
+              "cost_usd": "0.000387"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4097,
+              "output_tokens": 47,
+              "cost_usd": "0.000433"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 2012,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "csa-not-certified-2",
+      "category": "certification_tolerance",
+      "fast": false,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Is the 767C00-11320000/A CSA certified?",
+          "answer": "No. The 767C00-11320000/A is not CSA certified. Its listed certifications are CE and UKCA. It is a weatherproof model for 220 V single-phase AC supply.",
+          "response_type": "detail",
+          "products": [
+            "767C00-11320000/A"
+          ],
+          "warnings": [
+            "not_csa_certified"
+          ],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "767C00-11320000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3568,
+              "output_tokens": 59,
+              "cost_usd": "0.000386"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4093,
+              "output_tokens": 62,
+              "cost_usd": "0.000440"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 2172,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "tolerance-230v",
+      "category": "certification_tolerance",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Busco un actuador weatherproof para 230 V",
+          "answer": "Hay varios actuadores weatherproof monofásicos de corriente alterna que encajan con 230 V. El catálogo los ofrece a 220 V, dentro de la tolerancia de tensión aplicada a su suministro.\n\n- **761A00-11320000/A**: modulante (hasta 65 Nm) u on/off (hasta 80 Nm). Tiempo de recorrido de 20 s a 50 Hz.\n- **761B00-11320000/A**: modulante (hasta 70 Nm) u on/off (hasta 100 Nm). Tiempo de recorrido de 23 s a 50 Hz.\n- **762A00-11320000/A**: modulante, hasta 130 Nm. Tiempo de recorrido de 21 s a 50 Hz.\n\nTodos estos modelos tienen certificación CSA según los datos. El ciclo de trabajo publicado es del 40 % en los modelos que he revisado.\n\nPara acotar la búsqueda, ¿qué par necesita (en in-lb o Nm) y si la aplicación es on/off o modulante? Si me indica la frecuencia de su red (50 o 60 Hz), también puedo confirmar la velocidad para ese caso.",
+          "response_type": "recommendation",
+          "products": [
+            "761A00-11320000/A",
+            "761B00-11320000/A",
+            "762A00-11320000/A"
+          ],
+          "warnings": [
+            "tolerance_applied"
+          ],
+          "tool_calls": [
+            {
+              "tool": "search_actuators",
+              "args": {
+                "limit": 5,
+                "enclosure": "weatherproof",
+                "voltage_v": 230
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3566,
+              "output_tokens": 178,
+              "cost_usd": "0.000446"
+            },
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 4753,
+              "output_tokens": 534,
+              "cost_usd": "0.000742"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 4587,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": null,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "out-of-scope-capital",
+      "category": "out_of_scope",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "¿Cuál es la capital de Francia?",
+          "answer": "Lo siento, solo puedo ayudarte con los actuadores Series 76: selección por potencia disponible, par, tipo de servicio o envolvente, y consulta de sus especificaciones. ¿Necesitas buscar algún actuador para tu aplicación?",
+          "response_type": "clarification",
+          "products": [],
+          "warnings": [],
+          "tool_calls": [],
+          "usage": [
+            {
+              "model": "anthropic/claude-haiku-5.5",
+              "input_tokens": 3564,
+              "output_tokens": 91,
+              "cost_usd": "0.000402"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 1263,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": null,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null,
+            "answer_format": true
+          }
+        }
+      ]
+    }
+  ],
+  "langsmith_experiment": "anthropic/claude-haiku-5.5-9df2c94d"
+}

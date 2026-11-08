@@ -23,13 +23,52 @@ Requirements:
 - For local development, tests and ingestion: [uv](https://docs.astral.sh/uv/) (it installs
   Python 3.12) and `make`.
 
-```bash
-cp .env.example .env   # optional: the defaults run the fake LLM, no key needed
-```
+### Run with the real agent
 
-With an empty `.env` everything runs with `LLM_PROVIDER=fake`, a scripted model that calls the
-real tools and costs nothing. To use a real model, fill in the provider, the two model IDs and
-that provider's key. Model IDs are never hardcoded.
+> **Without a `.env` the API runs the fake model** (`LLM_PROVIDER=fake`): a scripted stand-in
+> that calls the real tools but does not understand free text. It exists for tests. To try the
+> assistant, configure a real model as below.
+
+1. Create `.env` from the example:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Set these four variables in `.env` (the models used in the evaluation below):
+
+   ```dotenv
+   LLM_PROVIDER=openrouter
+   AGENT_MODEL=anthropic/claude-haiku-5.5
+   FALLBACK_MODEL=z-ai/glm-5.3
+   OPENROUTER_API_KEY=<your OpenRouter key>
+   ```
+
+   Optional: `DAILY_BUDGET_USD=1` stops the API from calling the model once the day's reported
+   spend reaches that amount. A chat turn costs about $0.001 with these models.
+
+3. Start (or restart) the stack. `--build` is only needed after a code change, but is harmless:
+
+   ```bash
+   docker compose up --build -d
+   ```
+
+4. Check that the API picked up the provider:
+
+   ```bash
+   curl -s localhost:8000/health
+   # {"status":"ok","database":"ok","llm_provider":"openrouter","agent_model":"anthropic/claude-haiku-5.5",...}
+   ```
+
+   If it still says `fake`, the `.env` is not in the repository root or the container was not
+   recreated: run `docker compose up -d api` again.
+
+To switch provider later, edit `.env` and run `docker compose up -d api` (no rebuild needed).
+`LLM_PROVIDER=google` with a Gemini model and `GOOGLE_API_KEY` is a free alternative for manual
+checks, with a low daily request limit. Model IDs are never hardcoded; they always come from
+these variables.
+
+### Environment variables
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
@@ -248,16 +287,16 @@ code, so the agent needs reliable tool calling and good Spanish more than raw re
 
 | Task | Variable | Model used | Why | Measured cost |
 | --- | --- | --- | --- | --- |
-| Agent (tool calling + answer) | `AGENT_MODEL` | `anthropic/claude-sonnet-5.5` via OpenRouter | The agent's job is strict instruction following more than reasoning: pick the right tool, never write numbers that are not in a tool result, no tables, no internals, answer in the user's language. A turn that fails the numeric validator is retried, which doubles its cost, so a model that gets it right the first time is cheaper in practice than a cheaper model that triggers retries. At the measured cost the $10 key covers about 500 turns, or about 12 full eval runs. Cheaper candidates (`docs/design.md`) were not run through the suite; trying one is a change of `AGENT_MODEL` plus `make eval-full` | $0.0202 per turn on average, about 7,840 tokens per turn (latest full eval) |
+| Agent (tool calling + answer) | `AGENT_MODEL` | `anthropic/claude-haiku-5.5` via OpenRouter | The agent's job is strict instruction following more than reasoning: pick the right tool, never write numbers that are not in a tool result, no tables, no internals, answer in the user's language. Filtering, ranking and units are code, so a small model is enough as long as it follows those rules. It was chosen by measurement: on the full eval suite it scored 100 % on every metric, as `anthropic/claude-sonnet-5.5` did in its last run, at about 17 times less per turn ($0.0012 vs $0.0202; OpenRouter list prices: $0.10 vs $2.00 per million input tokens, $0.50 vs $10.00 per million output tokens). No turn needed the validator to strip a number. At the measured cost the $10 key covers about 8,600 turns | $0.0012 per turn on average, about 9,280 tokens per turn (latest full eval) |
 | Fallback when the agent model fails | `FALLBACK_MODEL` | `z-ai/glm-5.3` via OpenRouter | A different provider and model family, so an outage or rate limit at the agent model's provider does not take the assistant down. It supports tool calling and only runs when the primary fails, so availability matters more than quality or price | Not called in any eval run ($0) |
 | Vision extraction of the scanned PDF (human-run, once) | `INGEST_LLM_PROVIDER`, `INGEST_LLM_MODEL` | `google/gemini-3.8-flash-20260902` via OpenRouter (recorded in `backend/data/extracted/*.json`) | Reads scanned tables well and returns structured JSON; the same family is free on Google AI Studio, so extraction can be tried without spending the key. It runs only when the PDF is re-read, and its output is committed | Not recorded: `extract` does not log usage. A run is 14 calls (7 tables, twice each) |
 | Tests and local runs | `LLM_PROVIDER=fake` | `fake-rules` (scripted, calls the real tools) | No cost, deterministic | $0 |
 
 Measured spend on the OpenRouter key:
 
-- Evaluation runs on 2026-11-07 (from `backend/eval/results/`): $0.731 (first full run),
-  $0.133, $0.091 and $0.024 (targeted reruns of failing cases) and $0.809 (latest full run):
-  **$1.79 in total**.
+- Evaluation runs (from `backend/eval/results/`): on 2026-11-07 with Sonnet, $0.731 (first full
+  run), $0.133, $0.091 and $0.024 (targeted reruns of failing cases) and $0.809 (full run); on
+  2026-11-08 with Haiku, $0.047 (full run). **$1.84 in total**.
 - Manual checks recorded in the local `llm_usage` table: 7 model calls to
   `anthropic/claude-sonnet-5.5` on 2026-11-08, $0.080.
 - The key's overall balance is on the OpenRouter dashboard. The repository records only the
@@ -285,28 +324,35 @@ table per category and writes `eval/results/<date>-<model>.json`. It refuses to 
 `openrouter` (checked locally and through `/health`) without `--confirm-paid`. With
 `LANGSMITH_TRACING=true` it also uploads the dataset and logs a LangSmith experiment.
 
-Latest full run: 2026-11-07, `anthropic/claude-sonnet-5.5` via OpenRouter (fallback
-`z-ai/glm-5.3`), 36 cases / 40 turns
-([`backend/eval/results/2026-11-07-anthropic-claude-sonnet-5.5-11.json`](backend/eval/results/2026-11-07-anthropic-claude-sonnet-5.5-11.json)).
-Tool selection, argument accuracy, expected part numbers, `response_type`, numeric faithfulness
-and coreference all scored 100 % in every category. That run predates the answer-format metric.
+Latest full run: 2026-11-08, `anthropic/claude-haiku-5.5` via OpenRouter (fallback
+`z-ai/glm-5.3`, never called), 37 cases / 41 turns
+([`backend/eval/results/2026-11-08-anthropic-claude-haiku-5.5.json`](backend/eval/results/2026-11-08-anthropic-claude-haiku-5.5.json)).
+It runs the current code: the part-number and internals checks of the validator and the summary
+as product context. Tool selection, argument accuracy, expected part numbers, `response_type`,
+numeric faithfulness, coreference and answer format all scored 100 % in every category, and no
+answer had numbers stripped.
 
 | Category | Cases passed | Turns | p50 latency | p95 latency | Cost per turn | Tokens per turn |
 |---|---|---|---|---|---|---|
-| detail | 9/9 | 9 | 2938 ms | 4057 ms | $0.0146 | 6293 |
-| search | 6/6 | 6 | 5111 ms | 9799 ms | $0.0256 | 9314 |
-| comparison | 4/4 | 4 | 9589 ms | 11118 ms | $0.0357 | 12433 |
-| multi_turn | 4/4 | 8 | 4232 ms | 10020 ms | $0.0198 | 7641 |
-| invalid_part | 2/2 | 2 | 3582 ms | 6472 ms | $0.0194 | 7889 |
-| missing_data | 2/2 | 2 | 3152 ms | 3431 ms | $0.0143 | 6108 |
-| ambiguous | 2/2 | 2 | 3433 ms | 5870 ms | $0.0163 | 6532 |
-| no_match | 3/3 | 3 | 6765 ms | 6841 ms | $0.0231 | 8869 |
-| certification_tolerance | 3/3 | 3 | 3405 ms | 4844 ms | $0.0158 | 6575 |
-| out_of_scope | 1/1 | 1 | 1832 ms | 1832 ms | $0.0068 | 2885 |
-| **Total** | **36/36** | **40** | **4232 ms** | **9799 ms** | **$0.0202** | **7841** |
+| detail | 10/10 | 10 | 2962 ms | 4484 ms | $0.0009 | 7980 |
+| search | 6/6 | 6 | 4145 ms | 8131 ms | $0.0013 | 9575 |
+| comparison | 4/4 | 4 | 4910 ms | 8981 ms | $0.0016 | 11967 |
+| multi_turn | 4/4 | 8 | 3997 ms | 7629 ms | $0.0013 | 10125 |
+| invalid_part | 2/2 | 2 | 3592 ms | 4898 ms | $0.0012 | 9868 |
+| missing_data | 2/2 | 2 | 3369 ms | 3438 ms | $0.0009 | 7820 |
+| ambiguous | 2/2 | 2 | 3237 ms | 4080 ms | $0.0010 | 8074 |
+| no_match | 3/3 | 3 | 6213 ms | 6782 ms | $0.0015 | 11483 |
+| certification_tolerance | 3/3 | 3 | 2172 ms | 4587 ms | $0.0009 | 8196 |
+| out_of_scope | 1/1 | 1 | 1263 ms | 1263 ms | $0.0004 | 3655 |
+| **Total** | **37/37** | **41** | **3974 ms** | **7629 ms** | **$0.0012** | **9277** |
 
-Whole run: $0.81. The first full run on the same day passed 27/36 (`…-6.json`); the fixes are
-in [ADR 0005](docs/adr/0005-output-token-cap.md) and the commits that followed it.
+Whole run: $0.047.
+
+Earlier runs, with `anthropic/claude-sonnet-5.5` on 2026-11-07: the first full run passed 27/36
+(`…-sonnet-5.5-6.json`); after the fixes in [ADR 0005](docs/adr/0005-output-token-cap.md) and
+the commits that followed it, the last one passed 36/36 at $0.0202 per turn, p95 9799 ms
+(`…-sonnet-5.5-11.json`). That code had neither the new validator checks nor the product
+context, so the two models are compared on slightly different code.
 
 ## Optional features
 
@@ -340,7 +386,8 @@ Set `SEED_*_PASSWORD` in `.env` before the first start to use other passwords.
 - **Source limits carried into the answers:** Nm values are rounded in the PDF; the 3-phase
   table has a single torque column, so its service type is `unspecified`; 4 rows of that table
   are N/A and have no specs.
-- **A full eval costs about $0.81** with the current agent model, so it is run sparingly.
+- **The eval scores behavior, not prose.** Wording and tone (for example, mixing "tú" and
+  "usted" in Spanish) are not measured; read a few answers in the results file after a run.
 - **Plain HTTP only for local hosts** in the app; any other backend address needs HTTPS.
 - **The numeric validator has accepted gaps** ([ADR 0004](docs/adr/0004-agent-and-conversation-service.md)):
   allowlisted values (1-7, 10, 50, 60) are never flagged, a number backed by any result of the
