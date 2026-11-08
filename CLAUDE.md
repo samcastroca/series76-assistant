@@ -22,6 +22,7 @@ These rules exist because the assessment evaluates them directly. Never break th
 8. **Never use the real OpenRouter key** (`OPENROUTER_API_KEY`). Tests and local runs use `LLM_PROVIDER=fake` (or `google` for manual checks). Do not read `.env`. Do not run paid evaluations; the human runs those. The human-run ingest `extract` stage has its own key, `INGEST_OPENROUTER_API_KEY` (ADR 0002).
 9. **No internals in the chat UI.** Tool names, SQL, raw JSON and stack traces never reach the user-facing `answer` or the Chat screen. They belong only in `/api/messages/{id}/trace` and the Debug screen.
 10. **Conversations must survive a backend restart.** No conversation state lives only in memory.
+11. **Every `/api/*` route except login requires a token, and sessions are per user** (ADR 0006). New routes go on the protected routers (`dependencies=[Depends(get_current_user)]`); session queries filter by `user_id`, and another user's session answers 404. The trace requires the `developer` role. A test sweeps the OpenAPI paths to enforce this.
 
 ---
 
@@ -34,10 +35,11 @@ backend/
     agent/          create_agent setup, system_prompt.md, middleware, numeric validator
     tools/          LangChain tools (typed args) -> call db repositories
     db/             SQLAlchemy models, engine, Alembic migrations, parameterized repositories
-                    (catalog, sessions, messages, tool_calls, llm_usage)
+                    (catalog, users, sessions, messages, tool_calls, llm_usage), seed.py (demo users)
     services/       conversation service: load history, run agent, build products, validate, persist
     schemas/        Pydantic request/response models
     config.py       settings (pydantic-settings); the single place env vars are read
+    security.py     Argon2 password hashing and JWT access tokens (pure functions)
   ingest/           ingest.py (CLI: extract | build | load), tables.yaml (one spec per PDF table),
                     extract.py (vision LLM, human-run only), build.py, validate.py, load.py
   data/raw/         source PDFs (do not edit; the data PDF is a scan, see ADR 0002)
@@ -67,7 +69,7 @@ make test          # backend tests (LLM_PROVIDER=fake)
 make lint          # ruff check + ruff format --check
 make android-fixtures  # regenerate android/app/src/test/resources/*.json from the real API (fake LLM)
 make eval-cases    # regenerate backend/eval/cases.jsonl from catalog.json + cases_manual.jsonl
-make eval-fast     # 20 critical eval cases via the API (DEBUG_API=true), free provider only
+make eval-fast     # 20 critical eval cases via the API (logs in as the developer user), free provider only
 # make eval-full   # full suite with the paid key: HUMAN ONLY, never run it
 
 cd backend && uv run pytest -q                # backend tests
@@ -120,7 +122,7 @@ Source of truth: `backend/data/raw/series_76_electric_data.pdf`. The summary PDF
 `POST /api/conversation` request `{ "session_id"?: str, "query": str }` → response always includes `session_id` and `answer`.
 Our additional fields: `message_id`, `response_type` (`detail | recommendation | comparison | clarification | no_match | not_found | no_data | error`), `products`, `highlight_fields`, `clarification`, `suggestions`, `warnings`.
 
-Other endpoints: `GET /api/sessions`, `GET /api/sessions/{id}/messages`, `DELETE /api/sessions/{id}`, `GET /api/messages/{id}/trace` (debug only), `GET /health`, optional `POST /api/auth/login`.
+Other endpoints: `POST /api/auth/login` (public), `GET /api/auth/me`, `GET /api/sessions`, `GET /api/sessions/{id}/messages`, `DELETE /api/sessions/{id}`, `GET /api/messages/{id}/trace` (developer role), `GET /health` (public). All other `/api/*` routes need `Authorization: Bearer <token>`.
 
 Errors use one shape: `{ "error": { "code": str, "message": str } }`. Changing any response field requires updating the Android models and regenerating the fixtures in `android/app/src/test/resources/` (`make android-fixtures`; never hand-edit them).
 

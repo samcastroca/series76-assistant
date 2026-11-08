@@ -6,7 +6,9 @@ actuator at 220 V") and get answers backed by the published catalog tables.
 
 > **Status:** the ingestion, the agent, the REST API and the evaluation suite run locally
 > (`docker compose up`, `make eval-fast`). The Android app has its first layer: the
-> conversation list and the chat with product cards. Comparison tables and the debug screen come next.
+> conversation list and the chat with product cards. The API now requires login and the app
+> does not have a login screen yet, so it cannot reach the API until that lands. Login,
+> comparison tables and the debug screen come next.
 
 ## How it works
 
@@ -46,39 +48,62 @@ Requirements: Docker with Compose. For local development and tests also
 
 ```bash
 cp .env.example .env        # optional: the defaults run the fake LLM, no key needed
-docker compose up --build   # Postgres + migrations + catalog load + API on :8000
+docker compose up --build   # Postgres + migrations + catalog load + demo users + API on :8000
 ```
 
 On every start the `api` container runs `alembic upgrade head`, loads
-`backend/data/processed/catalog.json` (an idempotent upsert; no LLM involved) and starts uvicorn.
+`backend/data/processed/catalog.json` (an idempotent upsert; no LLM involved), creates the demo
+users if they are missing (`python -m app.db.seed`) and starts uvicorn.
 
 - API: `http://localhost:8000` (interactive docs at `/docs`)
 - From the Android emulator: `http://10.0.2.2:8000`
 
+Every `/api/*` route except login needs a token
+([ADR 0006](docs/adr/0006-auth-and-roles.md)). Demo users, created by the seed:
+
+| Email | Role | Password with the compose defaults (development only) |
+| --- | --- | --- |
+| `engineer1@example.com` | engineer | `engineer1-dev-password` |
+| `engineer2@example.com` | engineer | `engineer2-dev-password` |
+| `developer@example.com` | developer (can read traces) | `developer-dev-password` |
+
+Set `SEED_*_PASSWORD` in `.env` before the first start to use other passwords.
+
 ```bash
+# Log in (the token lasts JWT_EXPIRE_MINUTES, 30 by default)
+TOKEN=$(curl -s -X POST localhost:8000/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email": "engineer1@example.com", "password": "engineer1-dev-password"}' \
+  | python -c "import sys, json; print(json.load(sys.stdin)['access_token'])")
+
 # New conversation
 curl -s -X POST localhost:8000/api/conversation \
-  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"query": "datos del 761A00-11300000/A"}'
 
 # Follow-up: reuse the session_id from the previous response
 curl -s -X POST localhost:8000/api/conversation \
-  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"session_id": "<session_id>", "query": "and how much power does it draw?"}'
 ```
 
 The response always has `session_id`, `message_id`, `answer` and `response_type`, plus
 `products` (the specs, built from the database), `highlight_fields`, `clarification`,
-`suggestions` and `warnings`. Errors use `{"error": {"code": ..., "message": ...}}`.
+`suggestions` and `warnings`. Errors use `{"error": {"code": ..., "message": ...}}`; auth
+errors are 401 (`invalid_credentials`, `not_authenticated`, `invalid_token`, `token_expired`),
+403 (`forbidden`) and 429 (`too_many_attempts`, after 5 failed logins in 15 minutes per IP and
+email).
 
-| Method | Path | Use |
-| --- | --- | --- |
-| POST | `/api/conversation` | One chat turn |
-| GET | `/api/sessions` | Conversations, newest first |
-| GET | `/api/sessions/{id}/messages` | History with the products of each answer |
-| DELETE | `/api/sessions/{id}` | Delete a conversation |
-| GET | `/api/messages/{id}/trace` | Tool calls, model, tokens and cost (only with `DEBUG_API=true`) |
-| GET | `/health` | Database status and configured provider/models |
+| Method | Path | Auth | Use |
+| --- | --- | --- | --- |
+| POST | `/api/auth/login` | public | `{email, password}` → `{access_token, token_type, user: {email, role}}` |
+| GET | `/api/auth/me` | token | The current user's email and role |
+| POST | `/api/conversation` | token | One chat turn (another user's `session_id` → 404) |
+| GET | `/api/sessions` | token | The current user's conversations, newest first |
+| GET | `/api/sessions/{id}/messages` | token | History with the products of each answer |
+| DELETE | `/api/sessions/{id}` | token | Delete a conversation |
+| GET | `/api/messages/{id}/trace` | developer | Tool calls, model, tokens and cost of any message |
+| GET | `/health` | public | Database status and configured provider/models |
 
 ### Configuration
 
@@ -94,7 +119,10 @@ hardcoded.
 | `MODEL_CALL_LIMIT` / `TOOL_CALL_LIMIT` | `6` / `6` | Calls allowed per chat turn |
 | `HISTORY_TURNS` | `10` | Earlier turns sent to the model |
 | `MAX_QUERY_CHARS` | `1000` | Longest accepted query |
-| `DEBUG_API` | `false` | Mounts the trace endpoint for the app's Debug screen |
+| `JWT_SECRET` | none in code (compose has a dev-only default) | Signs the access tokens (HS256); at least 32 characters or the API does not start |
+| `JWT_EXPIRE_MINUTES` | `30` | Access token lifetime |
+| `LOGIN_MAX_ATTEMPTS` / `LOGIN_WINDOW_MINUTES` | `5` / `15` | Failed logins allowed per IP and email in the window, then 429 |
+| `SEED_ENGINEER1_PASSWORD` / `SEED_ENGINEER2_PASSWORD` / `SEED_DEVELOPER_PASSWORD` | none in code (compose has dev defaults) | Passwords of the demo users, used only when the seed creates them |
 | `DAILY_BUDGET_USD` | none (no cap) | Daily LLM spend cap (UTC day, from the cost the provider reports); over it a turn answers 503 `budget_exceeded` without calling the model |
 | `DATABASE_URL` | local Postgres | Async SQLAlchemy URL (compose points it at the `db` service) |
 
@@ -109,7 +137,8 @@ make lint                 # ruff check + format check
 ### Android app
 
 Open `android/` in Android Studio (or use Gradle from that folder) and run it on an emulator
-while the backend is up.
+while the backend is up. Until the app has its login screen, every API call answers 401
+`not_authenticated`.
 
 ```bash
 cd android
@@ -158,7 +187,7 @@ in `eval/cases_manual.jsonl` into `eval/cases.jsonl`. Twenty of them are marked 
 
 ```bash
 make eval-cases   # regenerate eval/cases.jsonl
-make eval-fast    # 20 fast cases against http://localhost:8000 (needs DEBUG_API=true)
+make eval-fast    # 20 fast cases against http://localhost:8000, logged in as the developer user
 make eval-full    # every case with the paid provider; loads .env, passes --confirm-paid: human only
 ```
 

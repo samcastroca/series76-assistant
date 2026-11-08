@@ -161,27 +161,36 @@ Cada producto lleva además `series_size`, `variant`, `csa_certified`, `hazardou
 
 `response_type` toma uno de estos valores: `detail`, `recommendation`, `comparison`, `clarification`, `no_match`, `not_found`, `no_data` o `error`. La app elige la vista según este campo. `clarification` lleva `{ question, options[] }` y la app lo muestra como chips.
 
-| Método | Ruta | Uso |
-| --- | --- | --- |
-| POST | `/api/conversation` | Turno de chat (contrato fijo) |
-| GET | `/api/sessions` | Lista: id, título, fecha de actualización, número de mensajes |
-| GET | `/api/sessions/{id}/messages` | Historial con `products` por mensaje, para reconstruir las tarjetas |
-| DELETE | `/api/sessions/{id}` | Borrar conversación (extra útil en la app) |
-| GET | `/api/messages/{id}/trace` | Debug: tool calls, argumentos, resultados, modelo, tokens, costo, latencia |
-| POST | `/api/auth/login` | Opcional: `{ email, password }` → `{ token }` |
-| GET | `/health` | Estado de la base de datos y configuración del LLM |
+| Método | Ruta | Auth | Uso |
+| --- | --- | --- | --- |
+| POST | `/api/auth/login` | pública | `{ email, password }` → `{ access_token, token_type: "bearer", user: { email, role } }` |
+| GET | `/api/auth/me` | token | `{ email, role }` del usuario actual |
+| POST | `/api/conversation` | token | Turno de chat (contrato fijo). Un `session_id` de otro usuario → 404 |
+| GET | `/api/sessions` | token | Sesiones del usuario: id, título, fecha de actualización, número de mensajes |
+| GET | `/api/sessions/{id}/messages` | token | Historial con `products` por mensaje, para reconstruir las tarjetas |
+| DELETE | `/api/sessions/{id}` | token | Borrar conversación (extra útil en la app) |
+| GET | `/api/messages/{id}/trace` | developer | Debug: tool calls, argumentos, resultados, modelo, tokens, costo, latencia, de cualquier mensaje |
+| GET | `/health` | pública | Estado de la base de datos y configuración del LLM |
 
-Cambio respecto a lo sugerido: la traza vive en `/api/messages/{id}/trace` y no dentro de la respuesta del chat. Esto mantiene liviano el payload del usuario. La ruta solo existe con `DEBUG_API=true`; si no, responde 404 y no aparece en `/docs`.
+Cambio respecto a lo sugerido: la traza vive en `/api/messages/{id}/trace` y no dentro de la respuesta del chat. Esto mantiene liviano el payload del usuario. La ruta exige el rol `developer` (ver [ADR 0006](adr/0006-auth-and-roles.md)).
 
-Errores con un formato único `{ "error": { "code", "message" } }`: 400 (`empty_query`, `query_too_long`, `invalid_request`), 404 (`session_not_found`, `message_not_found`, `not_found`), 405 (`method_not_allowed`), 503 (`llm_unavailable`) cuando el proveedor LLM falla y 503 (`budget_exceeded`) cuando se agotó el tope diario, y 500 (`internal_error`) sin detalles. Un fallo del LLM nunca deja la sesión a medias. `/health` es la excepción: es un informe de estado y devuelve su propio cuerpo también con 503 cuando la base no responde.
+**Autenticación:** todas las rutas `/api/*` salvo el login exigen `Authorization: Bearer <token>`. El token es un JWT HS256 firmado con `JWT_SECRET` (claims `sub`, `role`, `exp`; dura `JWT_EXPIRE_MINUTES`, 30 por defecto). En cada petición se carga el usuario de la base, y el rol que vale es el guardado allí. Una sesión de otro usuario responde 404, igual que una inexistente, para no revelar que existe.
+
+Errores con un formato único `{ "error": { "code", "message" } }`: 400 (`empty_query`, `query_too_long`, `invalid_request`), 401 (`invalid_credentials`, `not_authenticated`, `invalid_token`, `token_expired`, con `WWW-Authenticate: Bearer`), 403 (`forbidden`), 404 (`session_not_found`, `message_not_found`, `not_found`), 405 (`method_not_allowed`), 429 (`too_many_attempts`, con `Retry-After`, tras `LOGIN_MAX_ATTEMPTS` logins fallidos en `LOGIN_WINDOW_MINUTES` por IP y email), 503 (`llm_unavailable`) cuando el proveedor LLM falla y 503 (`budget_exceeded`) cuando se agotó el tope diario, y 500 (`internal_error`) sin detalles. Un fallo del LLM nunca deja la sesión a medias. `/health` es la excepción: es un informe de estado y devuelve su propio cuerpo también con 503 cuando la base no responde.
 
 ## Persistencia de conversaciones y trazas
 
 Tablas propias en la misma instancia de Postgres, en lugar de un checkpointer opaco. Así la misma fuente sirve para reanudar el agente, listar sesiones en la app y alimentar el debug.
 
 ```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY, email TEXT UNIQUE,   -- en minúsculas
+  password_hash TEXT,                       -- Argon2 (pwdlib)
+  role TEXT,                                -- 'engineer' | 'developer'
+  created_at TIMESTAMPTZ
+);
 CREATE TABLE sessions (
-  id UUID PRIMARY KEY, user_id UUID NULL,
+  id UUID PRIMARY KEY, user_id UUID NOT NULL REFERENCES users ON DELETE CASCADE,
   title TEXT, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ,
   state JSONB          -- { active_parts: [...], last_filters: {...} }
 );
@@ -243,8 +252,8 @@ Android con Kotlin y Jetpack Compose. El emulador corre en Windows, macOS y Linu
 | --- | --- | --- |
 | Conversaciones | Lista con título, fecha relativa y número de mensajes (el título ya son los primeros caracteres de la primera consulta); botón "Nueva conversación"; deslizar para borrar, con diálogo de confirmación; pull to refresh | Skeleton al cargar; vacío con llamada a la acción; error con "Reintentar"; si falla un refresco o un borrado, la lista sigue visible y un snackbar ofrece "Reintentar" |
 | Chat | Burbujas; tarjetas de producto; tabla comparativa; chips de aclaración; chips de sugerencias | Indicador "escribiendo"; mensaje fallido con reintento; banner sin conexión |
-| Debug | Por cada respuesta: tool calls en orden, argumentos y resultado en JSON plegable, modelo, tokens, costo y latencia | Carga bajo demanda; error si el backend no expone trazas |
-| Login (opcional) | Email y contraseña | Error de credenciales; token expirado lleva al login |
+| Debug | Por cada respuesta: tool calls en orden, argumentos y resultado en JSON plegable, modelo, tokens, costo y latencia | Carga bajo demanda; solo para el rol developer (403 para engineer) |
+| Login | Email y contraseña | Error de credenciales; demasiados intentos (429); token expirado o inválido (401) lleva al login |
 
 **Cómo se muestran los productos, según `response_type`:**
 
@@ -293,7 +302,7 @@ Cada caso borde tiene un `response_type` esperado y un test automatizado. La may
 
 **Opcionales recomendados** (bajo costo, buena impresión):
 
-- **Login:** JWT firmado con `JWT_SECRET`, contraseñas con bcrypt, 3 usuarios precargados por un seed y documentados en el README. `sessions.user_id` filtra todas las consultas. Si `AUTH_ENABLED=false`, la app funciona en modo de un solo usuario.
+- **Login:** implementado en el backend (ADR 0006). JWT firmado con `JWT_SECRET`, contraseñas con Argon2, 3 usuarios precargados por un seed (`python -m app.db.seed`) y documentados en el README. Los roles son `engineer` y `developer`, y solo el developer ve las trazas. `sessions.user_id` filtra todas las consultas. No hay modo sin autenticación. Falta la pantalla de login de la app.
 - **Voz:** `SpeechRecognizer` de Android en el dispositivo. El texto transcrito se muestra editable antes de enviarlo. No gasta presupuesto ni requiere cambios en el backend.
 
 **Estructura del repositorio:**
