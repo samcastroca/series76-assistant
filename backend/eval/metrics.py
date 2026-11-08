@@ -19,6 +19,10 @@ _SPEC_UNIT = re.compile(
     r"^(?:in-lb|lb-in|in·lb|N·m|Nm|A|W|s|%|seg(?:undos)?|seconds?)$", re.IGNORECASE
 )
 
+# A GFM table's delimiter row: only pipes, dashes, colons and spaces, with a pipe and a run of
+# dashes ("| --- | :-: |"). A lone "---" is a horizontal rule, not a table.
+_TABLE_DELIMITER = re.compile(r"^(?=[^\n]*\|)(?=[^\n]*-{3})[ \t|:-]+$", re.MULTILINE)
+
 METRICS = (
     "tool_selection",
     "argument_accuracy",
@@ -26,6 +30,7 @@ METRICS = (
     "response_type",
     "numeric_faithfulness",
     "coreference",
+    "answer_format",
 )
 
 
@@ -132,6 +137,12 @@ def numeric_faithfulness(
     return True
 
 
+def answer_format(response: dict[str, Any]) -> bool:
+    """The answer carries no Markdown table: specs are shown from `products` by the app
+    (design.md), and a table in the chat bubble duplicates them and does not fit a phone."""
+    return not _TABLE_DELIMITER.search(response.get("answer", ""))
+
+
 def spec_values(answer: str) -> list[str]:
     """Numbers printed with a spec unit ("700 in-lb", "17 s", "1,2 A")."""
     out = []
@@ -161,6 +172,7 @@ def score_turn(
         "response_type": kind,
         "numeric_faithfulness": numeric_faithfulness(expected, response, session_results),
         "coreference": coreference,
+        "answer_format": answer_format(response),
     }
 
 
@@ -173,6 +185,7 @@ def failed_turn(expected: dict[str, Any]) -> dict[str, bool | None]:
         "response_type": False,
         "numeric_faithfulness": False,
         "coreference": False if expected.get("coreference") else None,
+        "answer_format": False,
     }
 
 

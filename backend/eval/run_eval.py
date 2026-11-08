@@ -179,6 +179,7 @@ _SHORT = {
     "response_type": "type",
     "numeric_faithfulness": "nums",
     "coreference": "coref",
+    "answer_format": "format",
 }
 
 

@@ -77,6 +77,19 @@ def test_expected_part_numbers_is_order_insensitive_unless_ordered() -> None:
     assert metrics.expected_part_numbers(expected(part_numbers=None), response()) is None
 
 
+def test_answer_format_rejects_markdown_tables() -> None:
+    table = f"Datos del {PN}:\n\n| Servicio | Par |\n|---|---|\n| On/off | x |\n"
+    aligned = f"| a | b |\n| :--- | ---: |\n| {PN} | x |"
+    assert metrics.answer_format(response(answer=table)) is False
+    assert metrics.answer_format(response(answer=aligned)) is False
+
+
+def test_answer_format_accepts_prose_lists_and_rules() -> None:
+    prose = f"El **{PN}** cumple.\n\n- Weatherproof\n- On/off\n\n---\n\nA | B no es tabla."
+    assert metrics.answer_format(response(answer=prose)) is True
+    assert metrics.score_turn(expected(), response(answer=prose), [], [])["answer_format"] is True
+
+
 def test_numeric_faithfulness_uses_session_tool_results() -> None:
     results = [{"torque_inlb": TORQUE}]
     ok = response(answer=f"It gives {TORQUE} in-lb at 60 Hz.")

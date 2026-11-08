@@ -164,8 +164,8 @@ make eval-full    # every case with the paid provider; loads .env, passes --conf
 
 `eval/run_eval.py` scores each turn on tool selection, argument accuracy, expected part numbers,
 `response_type`, numeric faithfulness (every number in the answer is in a tool result) and
-coreference (follow-ups target the active product), and reports p50/p95 latency and cost per
-turn. It prints a table per category and writes `eval/results/<date>-<model>.json`. It refuses
+coreference (follow-ups target the active product) and answer format (no Markdown tables: the
+app shows specs from `products`), and reports p50/p95 latency and cost per turn. It prints a table per category and writes `eval/results/<date>-<model>.json`. It refuses
 to run against `openrouter` (checked locally and through `/health`) without `--confirm-paid`.
 With `LANGSMITH_TRACING=true` it also uploads the dataset and logs a LangSmith experiment from
 the scores it already computed.
@@ -173,7 +173,7 @@ the scores it already computed.
 Latest full run: 2026-11-07, `anthropic/claude-sonnet-5.5` via OpenRouter (fallback
 `z-ai/glm-5.3`), 36 cases / 40 turns
 ([`backend/eval/results/2026-11-07-anthropic-claude-sonnet-5.5-11.json`](backend/eval/results/2026-11-07-anthropic-claude-sonnet-5.5-11.json)).
-Every metric scored 100 % in every category.
+Every metric scored 100 % in every category (that run predates the answer-format metric).
 
 | Category | Cases passed | p95 latency |
 |---|---|---|
