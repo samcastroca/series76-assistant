@@ -237,11 +237,11 @@ Decisión: no se usan embeddings ni pgvector. Los datos son 68 filas con campos 
 
 Android con Kotlin y Jetpack Compose. El emulador corre en Windows, macOS y Linux, lo que facilita que el evaluador reproduzca la app.
 
-**Arquitectura:** MVVM con un solo módulo. Retrofit + kotlinx.serialization para la API, ViewModels con `StateFlow<UiState>` (`Loading`, `Content`, `Error`), Hilt o inyección manual, y Navigation Compose. La URL del backend se configura en `local.properties` (`API_BASE_URL`, por defecto `http://10.0.2.2:8000`) y también desde una pantalla de ajustes oculta.
+**Arquitectura:** MVVM con un solo módulo. Retrofit + kotlinx.serialization para la API, ViewModels con `StateFlow<UiState>` (`Loading`, `Content`, `Error`), inyección manual (un `AppContainer` en la clase `Application`; dos pantallas no justifican Hilt) y Navigation Compose con rutas tipadas. La URL del backend se configura en `local.properties` (`API_BASE_URL`, por defecto `http://10.0.2.2:8000`) y también desde una pantalla de ajustes oculta.
 
 | Pantalla | Contenido | Estados de carga y error |
 | --- | --- | --- |
-| Conversaciones | Lista con título, fecha relativa y primera línea; botón "Nueva conversación"; deslizar para borrar; pull to refresh | Skeleton al cargar; vacío con llamada a la acción; error con "Reintentar" |
+| Conversaciones | Lista con título, fecha relativa y número de mensajes (el título ya son los primeros caracteres de la primera consulta); botón "Nueva conversación"; deslizar para borrar, con diálogo de confirmación; pull to refresh | Skeleton al cargar; vacío con llamada a la acción; error con "Reintentar"; si falla un refresco o un borrado, la lista sigue visible y un snackbar ofrece "Reintentar" |
 | Chat | Burbujas; tarjetas de producto; tabla comparativa; chips de aclaración; chips de sugerencias | Indicador "escribiendo"; mensaje fallido con reintento; banner sin conexión |
 | Debug | Por cada respuesta: tool calls en orden, argumentos y resultado en JSON plegable, modelo, tokens, costo y latencia | Carga bajo demanda; error si el backend no expone trazas |
 | Login (opcional) | Email y contraseña | Error de credenciales; token expirado lleva al login |
@@ -252,6 +252,10 @@ Android con Kotlin y Jetpack Compose. El emulador corre en Windows, macOS y Linu
 - `recommendation` o `comparison`: tabla comparativa con la columna de specs fija y una columna por modelo con scroll horizontal. Se resaltan los campos de `highlight_fields` y el mejor valor de cada fila.
 - `no_match` o `not_found`: tarjeta de aviso con las alternativas como chips que envían la consulta al tocarlos.
 - Avisos como "Sin certificación CSA" se muestran como badges en la tarjeta.
+
+**Errores en la app:** el repositorio convierte cada fallo en un `AppError` y la UI muestra un texto fijo por caso, nunca el `message` del backend: sin conexión (el dispositivo no tiene red), el servidor no respondió a tiempo, no se pudo conectar (servidor caído), error del servidor (otro 5xx), asistente no disponible (503 `llm_unavailable`) y límite diario alcanzado (503 `budget_exceeded`). Todos ofrecen "Reintentar". Un 4xx no lo ofrece, porque repetir la misma petición fallaría igual. Un reintento reenvía la misma consulta a la misma sesión. Si el fallo fue `llm_unavailable`, el backend reutiliza el mensaje guardado con `status = 'error'`. Tras un timeout o una conexión cortada, el backend puede haber terminado y guardado el turno igualmente, así que en una sesión existente la app relee el historial antes de reenviar y, si el turno ya está, lo muestra en lugar de duplicarlo. En una conversación nueva no hay `session_id` que consultar: el reintento reenvía y, en el peor caso, crea una segunda sesión.
+
+**Fixtures:** los JSON de `android/app/src/test/resources/` se generan desde el API real con `make android-fixtures` (LLM fake, base desechable) y alimentan los tests y los `@Preview`. Un test del backend falla si quedan desactualizados.
 
 El texto del `answer` nunca lleva tablas; los números se leen desde `products`. Esto cumple el requisito de no mostrar nombres de tools ni detalles internos.
 

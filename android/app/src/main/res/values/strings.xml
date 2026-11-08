@@ -1,0 +1,72 @@
+<resources>
+    <string name="app_name">Series 76</string>
+
+    <!-- Common -->
+    <string name="retry">Reintentar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="delete">Borrar</string>
+    <string name="back">Volver</string>
+
+    <!-- Errors: one clear message per failure, never the backend's text -->
+    <string name="error_offline">Sin conexión. Revisa tu conexión a internet.</string>
+    <string name="error_timeout">El servidor no respondió a tiempo. Puede estar caído o saturado.</string>
+    <string name="error_unreachable">No se pudo conectar con el servidor. Puede estar caído.</string>
+    <string name="error_budget_exceeded">Se alcanzó el límite de uso diario del asistente. Vuelve a intentarlo mañana.</string>
+    <string name="error_assistant_unavailable">El asistente no está disponible en este momento.</string>
+    <string name="error_server">Error del servidor (%1$d). Inténtalo de nuevo.</string>
+    <string name="error_session_not_found">Esta conversación ya no existe.</string>
+    <string name="error_query_too_long">La consulta es demasiado larga. Acórtala e inténtalo de nuevo.</string>
+    <string name="error_empty_query">Escribe una consulta.</string>
+    <string name="error_client">No se pudo procesar la solicitud (%1$d).</string>
+    <string name="error_unexpected">Ocurrió un error inesperado.</string>
+    <string name="error_send_failed">No se pudo enviar.</string>
+    <string name="offline_banner">Sin conexión</string>
+
+    <!-- Conversations -->
+    <string name="sessions_title">Conversaciones</string>
+    <string name="new_conversation">Nueva conversación</string>
+    <string name="sessions_empty_title">Aún no hay conversaciones</string>
+    <string name="sessions_empty_body">Pregunta por un part number o describe lo que necesitas.</string>
+    <string name="sessions_load_error">No se pudieron cargar las conversaciones.</string>
+    <string name="delete_dialog_title">¿Borrar la conversación?</string>
+    <string name="delete_dialog_body">“%1$s” se borrará de forma permanente.</string>
+    <string name="delete_failed">No se pudo borrar la conversación.</string>
+    <string name="refresh_failed">No se pudo actualizar la lista.</string>
+    <plurals name="message_count">
+        <item quantity="one">%1$d mensaje</item>
+        <item quantity="other">%1$d mensajes</item>
+    </plurals>
+
+    <!-- Chat -->
+    <string name="chat_input_hint">Escribe tu consulta…</string>
+    <string name="send">Enviar</string>
+    <string name="typing">Escribiendo…</string>
+    <string name="chat_load_error">No se pudo cargar la conversación.</string>
+    <string name="chat_empty">Pregunta por un part number o describe el actuador que necesitas.</string>
+    <string name="suggestions_label">Sugerencias</string>
+
+    <!-- Product card -->
+    <string name="enclosure_weatherproof">Weatherproof</string>
+    <string name="enclosure_explosionproof">Explosionproof</string>
+    <string name="phase_value">%1$d fase</string>
+    <string name="voltage_value">%1$d V</string>
+    <string name="service_on_off">On/off</string>
+    <string name="service_modulating">Modulante</string>
+    <string name="service_unspecified">Servicio no especificado</string>
+    <string name="torque_value">%1$s in-lb · %2$s Nm</string>
+    <string name="motor_power">Potencia del motor</string>
+    <string name="watts_value">%1$d W</string>
+    <string name="not_published">No publicado</string>
+    <string name="badge_not_csa">Sin certificación CSA</string>
+    <string name="badge_no_data">Datos no publicados</string>
+    <string name="badge_not_meeting">No cumple los requisitos</string>
+
+    <!-- Turn warnings -->
+    <string name="warning_tolerance_applied">Se aplicó la tolerancia de voltaje.</string>
+    <string name="warning_service_type_unspecified">La tabla no distingue on/off de modulante.</string>
+    <string name="warning_not_csa_certified">Incluye modelos sin certificación CSA.</string>
+    <string name="warning_no_published_data">Hay modelos sin datos publicados.</string>
+    <string name="warning_multiple_filters_blocking">Varios requisitos juntos impiden encontrar un modelo.</string>
+    <string name="warning_numbers_removed">Se quitaron cifras que no se pudieron verificar.</string>
+    <string name="warning_tool_error">No se pudo consultar parte del catálogo.</string>
+</resources>

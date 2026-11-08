@@ -65,6 +65,7 @@ make ingest        # ingest build + load (deterministic; never calls an LLM)
 # ingest extract    # vision LLM over the scanned PDF: HUMAN ONLY (INGEST_LLM_PROVIDER + its key)
 make test          # backend tests (LLM_PROVIDER=fake)
 make lint          # ruff check + ruff format --check
+make android-fixtures  # regenerate android/app/src/test/resources/*.json from the real API (fake LLM)
 make eval-cases    # regenerate backend/eval/cases.jsonl from catalog.json + cases_manual.jsonl
 make eval-fast     # 20 critical eval cases via the API (DEBUG_API=true), free provider only
 # make eval-full   # full suite with the paid key: HUMAN ONLY, never run it
@@ -121,7 +122,7 @@ Our additional fields: `message_id`, `response_type` (`detail | recommendation |
 
 Other endpoints: `GET /api/sessions`, `GET /api/sessions/{id}/messages`, `DELETE /api/sessions/{id}`, `GET /api/messages/{id}/trace` (debug only), `GET /health`, optional `POST /api/auth/login`.
 
-Errors use one shape: `{ "error": { "code": str, "message": str } }`. Changing any response field requires updating the Android models and the fixtures in `android/app/src/test/resources/`.
+Errors use one shape: `{ "error": { "code": str, "message": str } }`. Changing any response field requires updating the Android models and regenerating the fixtures in `android/app/src/test/resources/` (`make android-fixtures`; never hand-edit them).
 
 ---
 

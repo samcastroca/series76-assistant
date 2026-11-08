@@ -5,7 +5,8 @@ actuators**. Users ask in natural language (for example, "I need a weatherproof 
 actuator at 220 V") and get answers backed by the published catalog tables.
 
 > **Status:** the ingestion, the agent, the REST API and the evaluation suite run locally
-> (`docker compose up`, `make eval-fast`). The Android app is not implemented yet.
+> (`docker compose up`, `make eval-fast`). The Android app has its first layer: the
+> conversation list and the chat with product cards. Comparison tables and the debug screen come next.
 
 ## How it works
 
@@ -104,6 +105,32 @@ docker compose up -d db   # tests create throwaway databases on this server
 make test                 # backend tests, always with the fake LLM
 make lint                 # ruff check + format check
 ```
+
+### Android app
+
+Open `android/` in Android Studio (or use Gradle from that folder) and run it on an emulator
+while the backend is up.
+
+```bash
+cd android
+./gradlew test            # unit tests: API contract, repository errors, ViewModels
+./gradlew assembleDebug   # build the app
+```
+
+- **Backend URL:** the app calls `http://10.0.2.2:8000`, which is the host machine as seen from
+  the emulator. To use another address, set `API_BASE_URL=http://<host>:8000` in
+  `android/local.properties`. Plain HTTP is allowed only for `10.0.2.2`, `localhost` and
+  `127.0.0.1` (`res/xml/network_security_config.xml`).
+- **Fixtures:** the JSON payloads in `android/app/src/test/resources/` feed the tests and the
+  `@Preview`s. They are generated from the real API with the fake LLM, so they hold catalog
+  values only from the database. Regenerate them with `make android-fixtures` (needs
+  `docker compose up -d db`) whenever a response changes; a backend test fails while they are
+  stale.
+- **Errors:** each failure gets its own message with "Retry": no connection, server not
+  answering (timeout), server down, server error (5xx), assistant unavailable (503
+  `llm_unavailable`) and daily limit reached (503 `budget_exceeded`).
+- **Local runs use the fake LLM:** compose takes `LLM_PROVIDER` from `.env`. To be sure no paid
+  provider answers while you try the app, start the API with `LLM_PROVIDER=fake docker compose up`.
 
 ### Ingestion
 
