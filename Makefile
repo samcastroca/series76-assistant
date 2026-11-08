@@ -1,4 +1,4 @@
-.PHONY: up down test lint ingest
+.PHONY: up down test lint ingest eval-cases eval-fast eval-full
 
 up:
 	docker compose up --build
@@ -18,3 +18,15 @@ lint:
 # Deterministic ingest (build + load); never calls an LLM.
 ingest:
 	cd backend && uv run python -m ingest.ingest build && uv run python -m ingest.ingest load
+
+# Regenerate eval/cases.jsonl from catalog.json + eval/cases_manual.jsonl.
+eval-cases:
+	cd backend && uv run python -m eval.generate_cases
+
+# The 20 fast cases against the running API (needs DEBUG_API=true). Refuses a paid provider.
+eval-fast:
+	cd backend && uv run python -m eval.run_eval --fast
+
+# Full suite with the paid provider: HUMAN ONLY.
+eval-full:
+	cd backend && uv run python -m eval.run_eval --confirm-paid

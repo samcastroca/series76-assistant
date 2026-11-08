@@ -4,8 +4,8 @@ A technical assistant that helps plant engineers look up and select **Series 76 
 actuators**. Users ask in natural language (for example, "I need a weatherproof modulating
 actuator at 220 V") and get answers backed by the published catalog tables.
 
-> **Status:** the ingestion, the agent and the REST API run with `docker compose up`. The
-> Android app and the evaluation suite are not implemented yet.
+> **Status:** the ingestion, the agent, the REST API and the evaluation suite run locally
+> (`docker compose up`, `make eval-fast`). The Android app is not implemented yet.
 
 ## How it works
 
@@ -119,6 +119,27 @@ uv run --group extract --env-file ../.env python -m ingest.ingest extract
 `extract` runs the vision model twice per table and writes the cells where the runs disagree to
 `data/extracted/discrepancies.md`. Each one is checked against the PDF and fixed in
 `data/corrections.yaml`; `build` refuses to run until every disagreement is covered.
+
+### Evaluation
+
+The agent is evaluated end to end through the API. `backend/eval/generate_cases.py` builds cases
+from `data/processed/catalog.json` (lookups, searches, comparisons, multi-turn chains; expected
+part numbers and thresholds are computed from the catalog) and merges the hand-written edge cases
+in `eval/cases_manual.jsonl` into `eval/cases.jsonl`. Twenty of them are marked `fast`.
+
+```bash
+make eval-cases   # regenerate eval/cases.jsonl
+make eval-fast    # 20 fast cases against http://localhost:8000 (needs DEBUG_API=true)
+make eval-full    # every case with the paid provider; passes --confirm-paid: human only
+```
+
+`eval/run_eval.py` scores each turn on tool selection, argument accuracy, expected part numbers,
+`response_type`, numeric faithfulness (every number in the answer is in a tool result) and
+coreference (follow-ups target the active product), and reports p50/p95 latency and cost per
+turn. It prints a table per category and writes `eval/results/<date>-<model>.json`. It refuses
+to run against `openrouter` (checked locally and through `/health`) without `--confirm-paid`.
+With `LANGSMITH_TRACING=true` it also uploads the dataset and logs a LangSmith experiment from
+the scores it already computed.
 
 ## Repository layout
 

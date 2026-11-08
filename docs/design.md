@@ -282,7 +282,7 @@ Cada caso borde tiene un `response_type` esperado y un test automatizado. La may
 1. **Ingesta** (pytest, sin LLM): 68 filas, valores puntuales verificados a mano, N/A y CSA.
 2. **Tools** (pytest + Postgres en Docker): normalización, coincidencias parciales, filtros, tolerancia de voltaje, relajación de filtros.
 3. **API** (pytest + `LLM_PROVIDER=fake`): contrato, sesiones, persistencia tras reinicio y formato de errores.
-4. **Evaluación del agente** (`eval/cases.yaml`, unas 30 preguntas, con la key real): se comprueba la tool elegida, el `response_type` y que todos los números del `answer` existan en los resultados. Se ejecuta pocas veces por el presupuesto.
+4. **Evaluación del agente** (`eval/cases.jsonl`, unas 36 preguntas generadas desde `catalog.json` más casos manuales; `eval/run_eval.py` por la API): se miden la tool elegida, sus argumentos, los part numbers esperados, el `response_type`, que todos los números del `answer` existan en los resultados, la correferencia en seguimientos, la latencia p95 y el costo por turno. 20 casos `fast` corren gratis (`make eval-fast`); la suite completa con la key real requiere `--confirm-paid` y se ejecuta pocas veces por el presupuesto.
 5. **App:** tests de ViewModel con un repositorio falso y una prueba manual de los flujos principales.
 
 ## Opcionales, repositorio, plan y riesgos
