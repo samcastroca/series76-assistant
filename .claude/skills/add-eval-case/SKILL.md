@@ -55,7 +55,7 @@ The eval dataset is how we prove the agent works on cases beyond our own example
 4. **Check for duplicates** with the same intent; prefer adding a new wording to an existing case's family over a near-copy.
 5. **Add a negative twin** when useful: a similar query that must *not* trigger the behavior (for example, an unambiguous part number must not trigger a clarification).
 6. **Regenerate**: `make eval-cases` (`tests/test_eval_cases.py` fails if `cases.jsonl` is stale).
-7. **Run the free check only**: `make eval-fast` against an API started with `LLM_PROVIDER=google` or `fake` and `DEBUG_API=true`; the runner refuses `openrouter` without `--confirm-paid`. Never run `make eval-full`; the human runs paid evaluations.
+7. **Run the free check only**: `make eval-fast` against an API started with `LLM_PROVIDER=google` or `fake` (the runner logs in as the developer demo user to read traces); the runner refuses `openrouter` without `--confirm-paid`. Never run `make eval-full`; the human runs paid evaluations.
 8. If the case reveals a deterministic bug (tool, ingestion, validator), also add a unit test in `backend/tests/` that fails before the fix.
 
 ## Done when

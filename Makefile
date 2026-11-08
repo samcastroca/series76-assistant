@@ -29,7 +29,10 @@ android-fixtures: export LLM_PROVIDER = fake
 android-fixtures:
 	cd backend && uv run python -m scripts.export_android_fixtures
 
-# The 20 fast cases against the running API (needs DEBUG_API=true). Refuses a paid provider.
+# The 20 fast cases against the running API, logged in as the developer demo user (the trace
+# needs that role). EVAL_PASSWORD defaults to the docker compose development password.
+# Refuses a paid provider.
+eval-fast: export EVAL_PASSWORD ?= developer-dev-password
 eval-fast:
 	cd backend && uv run python -m eval.run_eval --fast
 

@@ -6,6 +6,8 @@ from datetime import date
 from decimal import Decimal
 
 import httpx
+import pytest
+from pydantic import SecretStr
 
 from eval import generate_cases as gen
 from eval import metrics, run_eval
@@ -235,15 +237,65 @@ def test_runner_rejects_unknown_case_ids(monkeypatch) -> None:
     assert seen == ["/health"]  # stopped before any conversation call
 
 
-def test_runner_requires_the_debug_trace_endpoint(monkeypatch) -> None:
-    monkeypatch.delenv("LLM_PROVIDER", raising=False)
-
+def _login_transport(login: httpx.Response, seen: list[str]) -> httpx.MockTransport:
     def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.url.path)
         if request.url.path == "/health":
             return httpx.Response(200, json={"llm_provider": "fake", "agent_model": None})
-        return httpx.Response(404, json={"error": {"code": "not_found", "message": "Not Found"}})
+        if request.url.path == "/api/auth/login":
+            return login
+        return httpx.Response(500, json={"error": {"code": "unexpected", "message": "no"}})
 
-    assert run_eval.main(["--fast"], transport=httpx.MockTransport(handler)) == 1
+    return httpx.MockTransport(handler)
+
+
+def _login_ok(role: str) -> httpx.Response:
+    user = {"email": "e@example.com", "role": role}
+    return httpx.Response(200, json={"access_token": "t", "token_type": "bearer", "user": user})
+
+
+@pytest.mark.parametrize(
+    ("password", "login", "calls"),
+    [
+        (None, _login_ok("developer"), ["/health"]),  # no password: never tries to log in
+        (
+            "pw",
+            httpx.Response(401, json={"error": {"code": "invalid_credentials", "message": "x"}}),
+            ["/health", "/api/auth/login"],
+        ),
+        ("pw", _login_ok("engineer"), ["/health", "/api/auth/login"]),  # trace needs developer
+    ],
+)
+def test_runner_requires_a_developer_login(monkeypatch, password, login, calls) -> None:
+    monkeypatch.delenv("LLM_PROVIDER", raising=False)
+    monkeypatch.delenv("EVAL_PASSWORD", raising=False)
+    if password:
+        monkeypatch.setenv("EVAL_PASSWORD", password)
+    seen: list[str] = []
+    assert run_eval.main(["--fast"], transport=_login_transport(login, seen)) == 1
+    assert seen == calls  # stopped before any conversation call
+
+
+def test_runner_logs_in_again_when_the_token_expires() -> None:
+    logins: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/api/auth/login":
+            logins.append(json.loads(request.content)["email"])
+            token = f"t{len(logins)}"
+            user = {"email": "d@example.com", "role": "developer"}
+            return httpx.Response(
+                200, json={"access_token": token, "token_type": "bearer", "user": user}
+            )
+        if request.headers["Authorization"] == "Bearer t1":
+            return httpx.Response(401, json={"error": {"code": "token_expired", "message": "x"}})
+        return httpx.Response(200, json={"ok": True})
+
+    auth = run_eval.DeveloperAuth("d@example.com", SecretStr("pw"))
+    with httpx.Client(base_url="http://t", transport=httpx.MockTransport(handler), auth=auth) as c:
+        r = c.get("/api/sessions")
+    assert r.status_code == 200 and r.json() == {"ok": True}
+    assert logins == ["d@example.com", "d@example.com"]
 
 
 def test_run_case_scores_turns_and_cleans_up() -> None:

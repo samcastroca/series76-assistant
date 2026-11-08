@@ -1,8 +1,9 @@
 """Run the evaluation cases against the running API and score them.
 
 The agent runs inside the API, so the model that is billed is the server's: /health reports it.
-Tool calls and LLM usage come from GET /api/messages/{id}/trace, so the API must run with
-DEBUG_API=true. Paid providers (openrouter) need --confirm-paid; the human runs those.
+Tool calls and LLM usage come from GET /api/messages/{id}/trace, which needs the developer role:
+the runner logs in with EVAL_EMAIL / EVAL_PASSWORD (a developer account) and sends that token on
+every request. Paid providers (openrouter) need --confirm-paid; the human runs those.
 
     uv run python -m eval.run_eval --fast              # 20 critical cases
     uv run python -m eval.run_eval --category search
@@ -24,6 +25,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from eval import metrics
@@ -43,10 +45,12 @@ class EvalSettings(BaseSettings):
     langsmith_tracing: bool = False
     eval_api_url: str = "http://localhost:8000"
     eval_timeout_s: float = 180.0
+    eval_email: str = "developer@example.com"
+    eval_password: SecretStr | None = None
 
 
 class EvalError(Exception):
-    """The run cannot start or continue (API down, trace endpoint disabled)."""
+    """The run cannot start or continue (API down, login failed, not a developer account)."""
 
 
 # --- Cases -------------------------------------------------------------------------------------
@@ -91,13 +95,58 @@ def paid_guard(
     return None
 
 
-def check_trace_endpoint(client: httpx.Client) -> None:
-    """The debug trace route answers message_not_found for an unknown id when DEBUG_API=true;
-    without it the route does not exist (generic not_found)."""
-    r = client.get("/api/messages/00000000-0000-0000-0000-000000000000/trace")
-    code = r.json().get("error", {}).get("code") if r.status_code == 404 else None
-    if code != "message_not_found":
-        raise EvalError("The trace endpoint is disabled. Start the API with DEBUG_API=true.")
+class DeveloperAuth(httpx.Auth):
+    """Bearer auth for a developer account (the trace endpoint needs that role). Logs in on the
+    first request and again, once, when a token expires mid-run (a long paid run can outlive
+    JWT_EXPIRE_MINUTES)."""
+
+    def __init__(self, email: str, password: SecretStr | None) -> None:
+        if password is None:
+            raise EvalError("Set EVAL_PASSWORD (and EVAL_EMAIL) to a developer account.")
+        self.email = email
+        self.password = password
+        self.token: str | None = None
+
+    def auth_flow(self, request: httpx.Request):
+        if request.url.path == "/api/auth/login":
+            yield request
+            return
+        if self.token is None:
+            yield from self._login(request)
+        request.headers["Authorization"] = f"Bearer {self.token}"
+        response = yield request
+        if response.status_code == 401 and _error_code(response) == "token_expired":
+            yield from self._login(request)
+            request.headers["Authorization"] = f"Bearer {self.token}"
+            yield request
+
+    def _login(self, request: httpx.Request):
+        body = {"email": self.email, "password": self.password.get_secret_value()}
+        response = yield httpx.Request("POST", request.url.join("/api/auth/login"), json=body)
+        response.read()
+        if response.status_code != 200:
+            code = _error_code(response) or response.status_code
+            raise EvalError(f"Login as {self.email} failed ({code}).")
+        data = response.json()
+        if data["user"]["role"] != "developer":
+            raise EvalError(
+                f"{self.email} is not a developer account; the trace endpoint needs one."
+            )
+        self.token = data["access_token"]
+
+
+def _error_code(response: httpx.Response) -> str | None:
+    response.read()
+    try:
+        return response.json().get("error", {}).get("code")
+    except ValueError:
+        return None
+
+
+def authenticate(client: httpx.Client, email: str, password: SecretStr | None) -> None:
+    """Attach DeveloperAuth and log in now, so a bad account stops the run before any case."""
+    client.auth = DeveloperAuth(email, password)
+    client.get("/api/auth/me").raise_for_status()
 
 
 # --- Running -----------------------------------------------------------------------------------
@@ -322,8 +371,8 @@ def main(argv: list[str] | None = None, transport: httpx.BaseTransport | None = 
             print("No cases selected.", file=sys.stderr)
             return 1
         try:
-            check_trace_endpoint(client)
-        except EvalError as exc:
+            authenticate(client, settings.eval_email, settings.eval_password)
+        except (EvalError, httpx.HTTPError, ValueError) as exc:
             print(exc, file=sys.stderr)
             return 1
 
