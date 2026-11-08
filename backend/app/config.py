@@ -56,6 +56,8 @@ class Settings(BaseSettings):
         "seed_engineer1_password",
         "seed_engineer2_password",
         "seed_developer_password",
+        "ingest_llm_model",
+        "ingest_openrouter_api_key",
         mode="before",
     )
     @classmethod

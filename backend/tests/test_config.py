@@ -51,3 +51,8 @@ def test_app_refuses_a_missing_or_short_jwt_secret(secret) -> None:
 def test_blank_seed_passwords_and_jwt_secret_count_as_unset() -> None:
     s = Settings(_env_file=None, jwt_secret="", seed_developer_password="")
     assert s.jwt_secret is None and s.seed_developer_password is None
+
+
+def test_blank_ingest_model_and_key_count_as_unset() -> None:
+    s = Settings(_env_file=None, ingest_llm_model="", ingest_openrouter_api_key="")
+    assert s.ingest_llm_model is None and s.ingest_openrouter_api_key is None
