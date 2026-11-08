@@ -27,6 +27,8 @@ from app.schemas.trace import UsageRecord
 logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT_PATH = Path(__file__).with_name("system_prompt.md")
+# Background from series_76_summary.pdf, written without product values (rule 1).
+PRODUCT_CONTEXT_PATH = Path(__file__).with_name("product_context.md")
 # Seen by the model only; the real error goes to the trace.
 TOOL_FAILED = "The catalog lookup failed. Tell the user the data is unavailable right now."
 INVALID_ARGS = (
@@ -37,7 +39,8 @@ INVALID_ARGS = (
 
 @cache
 def base_system_prompt() -> str:
-    return SYSTEM_PROMPT_PATH.read_text(encoding="utf-8")
+    parts = (SYSTEM_PROMPT_PATH, PRODUCT_CONTEXT_PATH)
+    return "\n\n".join(p.read_text(encoding="utf-8").strip() for p in parts) + "\n"
 
 
 def render_system_prompt(active_parts: list[str], shown_parts: list[str]) -> str:

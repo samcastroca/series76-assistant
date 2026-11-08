@@ -32,7 +32,8 @@ These rules exist because the assessment evaluates them directly. Never break th
 backend/
   app/
     api/            FastAPI routers, auth, error handlers
-    agent/          create_agent setup, system_prompt.md, middleware, numeric validator
+    agent/          create_agent setup, system_prompt.md, product_context.md (summary PDF, no
+                    product values; ADR 0008), middleware, numeric validator
     tools/          LangChain tools (typed args) -> call db repositories
     db/             SQLAlchemy models, engine, Alembic migrations, parameterized repositories
                     (catalog, users, sessions, messages, tool_calls, llm_usage), seed.py (demo users)

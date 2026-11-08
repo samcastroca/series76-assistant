@@ -77,13 +77,13 @@
   "usage": [
     {
       "model": "fake-rules",
-      "input_tokens": 832,
+      "input_tokens": 1398,
       "output_tokens": 10,
       "cost_usd": null
     },
     {
       "model": "fake-rules",
-      "input_tokens": 1059,
+      "input_tokens": 1625,
       "output_tokens": 20,
       "cost_usd": null
     }

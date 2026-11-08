@@ -213,8 +213,10 @@ The full design (data model, API contract, agent, edge cases) is in
 - **Tables as structured data, not RAG.** The catalog is 68 rows with typed fields, so it lives
   in PostgreSQL tables and is queried with exact filters. Filtering is explainable and lets the
   backend guarantee where every number comes from. No embeddings or pgvector: they would only
-  help with free text, and the summary PDF fits in the prompt. Trade-off: questions outside the
-  typed fields have no retrieval path.
+  help with free text, and the summary PDF fits in the prompt: it is rewritten without product
+  values as `backend/app/agent/product_context.md` and sent with every model call
+  ([ADR 0008](docs/adr/0008-summary-as-product-context.md)). Trade-off: questions outside the
+  typed fields and the summary have no retrieval path.
 - **The LLM does not filter, rank or compute.** One `create_agent` agent with three typed tools
   (`get_actuator`, `search_actuators`, `list_catalog_options`). Normalization, filtering,
   ranking, voltage tolerance and closest alternatives are deterministic Python with unit tests;
@@ -237,6 +239,7 @@ The full design (data model, API contract, agent, edge cases) is in
 | [0005](docs/adr/0005-output-token-cap.md) | Output token cap of 1500 |
 | [0006](docs/adr/0006-auth-and-roles.md) | Authentication with JWT and two roles |
 | [0007](docs/adr/0007-app-session-storage.md) | App session: encrypted storage and one session state |
+| [0008](docs/adr/0008-summary-as-product-context.md) | Summary PDF as product context in the prompt |
 
 ## Model choices
 

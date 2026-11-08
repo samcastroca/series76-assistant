@@ -233,7 +233,7 @@ Un solo modelo económico con buen tool calling para el agente basta, porque el 
 | Extracción por visión del PDF escaneado (solo desarrollo, la ejecuta el humano) | `INGEST_LLM_PROVIDER`, `INGEST_LLM_MODEL` | Visión con salida estructurada; se ejecuta pocas veces y su salida se versiona | Gemini vía Google AI Studio (gratis, 20 peticiones/día por modelo) u OpenRouter con clave propia |
 | Transcripción de voz (opcional) | — | Sin costo | Reconocimiento de voz del dispositivo |
 
-Decisión: no se usan embeddings ni pgvector. Los datos son 68 filas con campos tipados, y la búsqueda por filtros es exacta y explicable. pgvector solo tendría sentido para el texto del summary, que cabe completo en el prompt.
+Decisión: no se usan embeddings ni pgvector. Los datos son 68 filas con campos tipados, y la búsqueda por filtros es exacta y explicable. pgvector solo tendría sentido para el texto del summary, que cabe completo en el prompt: se reescribe sin valores de producto en `backend/app/agent/product_context.md` y se añade al system prompt en cada llamada (ADR 0008).
 
 **Control del gasto:**
 
