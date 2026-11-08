@@ -14,14 +14,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -39,8 +43,10 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
@@ -53,6 +59,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.series76.assistant.R
 import com.series76.assistant.data.AppError
 import com.series76.assistant.data.api.model.SessionSummary
+import com.series76.assistant.data.api.model.UserOut
 import com.series76.assistant.ui.common.ErrorState
 import com.series76.assistant.ui.common.errorText
 import com.series76.assistant.ui.preview.PreviewFixtures
@@ -62,6 +69,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun SessionsRoute(
     viewModel: SessionsViewModel,
+    user: UserOut,
+    onSignOut: () -> Unit,
     onOpen: (SessionSummary) -> Unit,
     onNew: () -> Unit,
 ) {
@@ -70,6 +79,8 @@ fun SessionsRoute(
     LaunchedEffect(Unit) { viewModel.onShown() }
     SessionsScreen(
         state = state,
+        user = user,
+        onSignOut = onSignOut,
         onOpen = onOpen,
         onNew = onNew,
         onRetry = viewModel::load,
@@ -86,6 +97,8 @@ fun SessionsRoute(
 @Composable
 fun SessionsScreen(
     state: SessionsUiState,
+    user: UserOut,
+    onSignOut: () -> Unit,
     onOpen: (SessionSummary) -> Unit,
     onNew: () -> Unit,
     onRetry: () -> Unit,
@@ -114,7 +127,12 @@ fun SessionsScreen(
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.sessions_title)) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.sessions_title)) },
+                actions = { AccountMenu(user, onSignOut) },
+            )
+        },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onNew,
@@ -261,11 +279,32 @@ private fun SkeletonBar(widthFraction: Float, heightDp: Int) {
     )
 }
 
+/** The signed-in user's email and "Sign out". */
+@Composable
+private fun AccountMenu(user: UserOut, onSignOut: () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    IconButton(onClick = { expanded = true }) {
+        Icon(Icons.Filled.AccountCircle, contentDescription = stringResource(R.string.account_menu))
+    }
+    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        DropdownMenuItem(text = { Text(user.email) }, onClick = {}, enabled = false)
+        HorizontalDivider()
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.sign_out)) },
+            onClick = {
+                expanded = false
+                onSignOut()
+            },
+        )
+    }
+}
+
 // --- Previews ----------------------------------------------------------------------------------
 
 @Composable
 private fun PreviewScreen(state: SessionsUiState) {
-    Series76AssistantTheme { SessionsScreen(state, {}, {}, {}, {}, {}, {}, {}, {}, {}) }
+    val user: UserOut = PreviewFixtures.load("auth_me")
+    Series76AssistantTheme { SessionsScreen(state, user, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}) }
 }
 
 @Preview(showBackground = true)

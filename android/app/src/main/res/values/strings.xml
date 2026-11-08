@@ -20,7 +20,22 @@
     <string name="error_client">No se pudo procesar la solicitud (%1$d).</string>
     <string name="error_unexpected">Ocurrió un error inesperado.</string>
     <string name="error_send_failed">No se pudo enviar.</string>
+    <string name="error_invalid_credentials">Email o contraseña incorrectos.</string>
+    <string name="error_too_many_attempts">Demasiados intentos fallidos. Espera unos minutos e inténtalo de nuevo.</string>
     <string name="offline_banner">Sin conexión</string>
+
+    <!-- Login and session -->
+    <string name="login_title">Iniciar sesión</string>
+    <string name="login_subtitle">Asistente técnico de actuadores Series 76</string>
+    <string name="email">Email</string>
+    <string name="password">Contraseña</string>
+    <string name="show_password">Mostrar contraseña</string>
+    <string name="hide_password">Ocultar contraseña</string>
+    <string name="sign_in">Entrar</string>
+    <string name="sign_out">Cerrar sesión</string>
+    <string name="account_menu">Cuenta</string>
+    <string name="verify_failed_title">No se pudo verificar tu sesión.</string>
+    <string name="checking_session">Verificando la sesión…</string>
 
     <!-- Conversations -->
     <string name="sessions_title">Conversaciones</string>

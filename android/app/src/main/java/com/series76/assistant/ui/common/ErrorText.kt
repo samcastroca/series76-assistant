@@ -31,6 +31,8 @@ fun errorText(error: AppError): String = when (error) {
         "session_not_found" -> stringResource(R.string.error_session_not_found)
         "query_too_long" -> stringResource(R.string.error_query_too_long)
         "empty_query" -> stringResource(R.string.error_empty_query)
+        "invalid_credentials" -> stringResource(R.string.error_invalid_credentials)
+        "too_many_attempts" -> stringResource(R.string.error_too_many_attempts)
         else -> stringResource(R.string.error_client, error.httpStatus)
     }
     AppError.Unexpected -> stringResource(R.string.error_unexpected)

@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.series76.assistant.data.ConversationRepository
+import com.series76.assistant.data.api.model.UserOut
 import com.series76.assistant.ui.chat.ChatRoute
 import com.series76.assistant.ui.chat.ChatViewModel
 import com.series76.assistant.ui.sessions.SessionsRoute
@@ -22,8 +23,9 @@ object SessionsDestination
 @Serializable
 data class ChatDestination(val sessionId: String? = null, val title: String? = null)
 
+/** The signed-in graph. Disposed when the session ends, so its back stack goes with it. */
 @Composable
-fun AppNavHost(repository: ConversationRepository) {
+fun AppNavHost(repository: ConversationRepository, user: UserOut, onSignOut: () -> Unit) {
     val navController = rememberNavController()
     NavHost(navController, startDestination = SessionsDestination) {
         composable<SessionsDestination> {
@@ -32,6 +34,8 @@ fun AppNavHost(repository: ConversationRepository) {
             )
             SessionsRoute(
                 viewModel = vm,
+                user = user,
+                onSignOut = onSignOut,
                 onOpen = { navController.navigate(ChatDestination(it.id, it.title)) },
                 onNew = { navController.navigate(ChatDestination()) },
             )
