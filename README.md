@@ -141,6 +141,29 @@ to run against `openrouter` (checked locally and through `/health`) without `--c
 With `LANGSMITH_TRACING=true` it also uploads the dataset and logs a LangSmith experiment from
 the scores it already computed.
 
+Latest full run: 2026-11-07, `anthropic/claude-sonnet-5.5` via OpenRouter (fallback
+`z-ai/glm-5.3`), 36 cases / 40 turns
+([`backend/eval/results/2026-11-07-anthropic-claude-sonnet-5.5-11.json`](backend/eval/results/2026-11-07-anthropic-claude-sonnet-5.5-11.json)).
+Every metric scored 100 % in every category.
+
+| Category | Cases passed | p95 latency |
+|---|---|---|
+| detail | 9/9 | 4057 ms |
+| search | 6/6 | 9799 ms |
+| comparison | 4/4 | 11118 ms |
+| multi_turn | 4/4 | 10020 ms |
+| invalid_part | 2/2 | 6472 ms |
+| missing_data | 2/2 | 3431 ms |
+| ambiguous | 2/2 | 5870 ms |
+| no_match | 3/3 | 6841 ms |
+| certification_tolerance | 3/3 | 4844 ms |
+| out_of_scope | 1/1 | 1832 ms |
+| **Total** | **36/36** | **9799 ms** (p50 4232 ms) |
+
+Cost: $0.0202 per turn on average, $0.81 for the whole run, about 7,840 tokens per turn. The
+first full run on the same day passed 27/36 (`…-6.json`); the fixes are in ADR 0005 and the
+commits that followed it.
+
 ## Repository layout
 
 ```
