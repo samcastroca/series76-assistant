@@ -256,6 +256,11 @@ db`) whenever a response changes; a backend test fails while they are stale.
 
 ## Design and architecture
 
+![Architecture: Android app, FastAPI backend with the LangChain agent, PostgreSQL, OpenRouter and the offline ingestion](docs/architecture.svg)
+
+The tools and the deterministic logic are the only path to the catalog numbers: the agent calls
+the tools, and the backend builds `products` from their typed results.
+
 The full design (data model, API contract, agent, edge cases) is in
 [`docs/design.md`](docs/design.md). The main decisions:
 
