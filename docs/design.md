@@ -275,7 +275,7 @@ Cada caso borde tiene un `response_type` esperado y un test automatizado. La may
 | "Compara 764A y 764B a 110V" | Comparación | Tabla comparativa | `comparison` |
 | "Recomiéndame uno" | Faltan requisitos | Pedir voltaje, servicio, torque y encapsulado | `clarification` |
 | "¿Cuál es el precio?" | Dato que no está en las tablas | Decir que no está disponible | `detail` o `no_data` |
-| Fuera de tema o inyección de prompt | — | Rechazo breve y redirección al catálogo | `error` (controlado) |
+| Fuera de tema o inyección de prompt | — | Sin llamar a tools: rechazo breve y redirección al catálogo | `clarification` |
 
 **Niveles de prueba:**
 
