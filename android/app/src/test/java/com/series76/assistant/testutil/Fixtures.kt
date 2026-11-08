@@ -2,8 +2,10 @@ package com.series76.assistant.testutil
 
 import com.series76.assistant.data.api.ApiJson
 import com.series76.assistant.data.api.model.ConversationResponse
+import com.series76.assistant.data.api.model.LoginResponse
 import com.series76.assistant.data.api.model.MessageOut
 import com.series76.assistant.data.api.model.SessionSummary
+import com.series76.assistant.data.api.model.UserOut
 import kotlinx.serialization.json.Json
 
 /**
@@ -28,4 +30,8 @@ object Fixtures {
     fun sessions(): List<SessionSummary> = load("sessions")
 
     fun messages(): List<MessageOut> = load("messages")
+
+    fun login(): LoginResponse = load("auth_login")
+
+    fun me(): UserOut = load("auth_me")
 }

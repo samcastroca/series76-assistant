@@ -39,7 +39,7 @@ class NetworkConversationRepositoryTest {
             .addConverterFactory(ApiJson.asConverterFactory("application/json".toMediaType()))
             .build()
             .create(Series76Api::class.java)
-        return NetworkConversationRepository(api, ApiJson) { online }
+        return NetworkConversationRepository(api, ApiCall(ApiJson) { online })
     }
 
     private fun enqueue(code: Int, fixture: String? = null, body: String? = null) {

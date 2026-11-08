@@ -2,12 +2,15 @@ package com.series76.assistant.data
 
 import com.series76.assistant.data.api.model.ApiErrorBody
 import com.series76.assistant.data.api.model.ConversationResponse
+import com.series76.assistant.data.api.model.LoginResponse
 import com.series76.assistant.data.api.model.MessageOut
 import com.series76.assistant.data.api.model.MessageStatus
 import com.series76.assistant.data.api.model.ResponseType
 import com.series76.assistant.data.api.model.Role
 import com.series76.assistant.data.api.model.SessionSummary
 import com.series76.assistant.data.api.model.TurnWarning
+import com.series76.assistant.data.api.model.UserOut
+import com.series76.assistant.data.api.model.UserRole
 import com.series76.assistant.testutil.Fixtures
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -93,8 +96,27 @@ class ContractDecodingTest {
             "error_session_not_found" to "session_not_found",
             "error_llm_unavailable" to "llm_unavailable",
             "error_budget_exceeded" to "budget_exceeded",
+            "error_invalid_credentials" to "invalid_credentials",
+            "error_not_authenticated" to "not_authenticated",
         ).forEach { (name, code) ->
             assertEquals(code, Fixtures.load<ApiErrorBody>(name, Fixtures.strictJson).error.code)
         }
+    }
+
+    @Test
+    fun `login and current user decode strictly`() {
+        val login = Fixtures.load<LoginResponse>("auth_login", Fixtures.strictJson)
+        assertEquals("bearer", login.tokenType)
+        assertTrue(login.accessToken.isNotEmpty())
+        val me = Fixtures.load<UserOut>("auth_me", Fixtures.strictJson)
+        assertEquals(me, login.user)
+        assertEquals(UserRole.ENGINEER, me.role)
+        assertFalse(me.isDeveloper)
+    }
+
+    @Test
+    fun `isDeveloper reflects the role the server sends`() {
+        assertTrue(UserOut("d@example.com", UserRole.DEVELOPER).isDeveloper)
+        assertFalse(UserOut("e@example.com", UserRole.ENGINEER).isDeveloper)
     }
 }

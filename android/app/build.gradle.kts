@@ -73,12 +73,17 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.markdown.renderer.m3) // renders the model's Markdown answers
     implementation(libs.okhttp.logging.interceptor) // installed only when BuildConfig.DEBUG
+    // The session (token, email, role) is stored encrypted: DataStore + Tink (ADR 0007).
+    implementation(libs.androidx.datastore)
+    implementation(libs.androidx.datastore.tink)
+    implementation(libs.tink.android) // AndroidKeysetManager (the version datastore-tink brings)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.okhttp.mockwebserver)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
