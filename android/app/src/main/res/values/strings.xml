@@ -37,6 +37,29 @@
     <string name="verify_failed_title">No se pudo verificar tu sesión.</string>
     <string name="checking_session">Verificando la sesión…</string>
 
+    <!-- Debug (developer role only) -->
+    <string name="debug_title">Debug</string>
+    <string name="debug_open_trace">Ver traza</string>
+    <string name="more_options">Más opciones</string>
+    <string name="debug_forbidden">No tienes permiso para ver trazas.</string>
+    <string name="debug_load_error">No se pudieron cargar las trazas.</string>
+    <string name="debug_empty">Esta conversación aún no tiene respuestas.</string>
+    <string name="debug_answer">Respuesta %1$d</string>
+    <string name="debug_model_calls">Llamadas al modelo</string>
+    <string name="debug_tokens">Tokens: %1$s entrada · %2$s salida</string>
+    <string name="debug_cost">Costo: %1$s</string>
+    <string name="debug_not_reported">no informado</string>
+    <string name="debug_tool_calls">Herramientas</string>
+    <string name="debug_no_tool_calls">Sin llamadas a herramientas.</string>
+    <string name="debug_tool_header">#%1$d %2$s · %3$d ms</string>
+    <string name="debug_tools_latency">Suma de latencias de herramientas: %1$d ms</string>
+    <string name="debug_args">Argumentos</string>
+    <string name="debug_result">Resultado</string>
+    <string name="debug_no_result">Sin resultado (la herramienta falló).</string>
+    <string name="debug_tool_error">Error: %1$s</string>
+    <string name="expand">Desplegar</string>
+    <string name="collapse">Plegar</string>
+
     <!-- Conversations -->
     <string name="sessions_title">Conversaciones</string>
     <string name="new_conversation">Nueva conversación</string>

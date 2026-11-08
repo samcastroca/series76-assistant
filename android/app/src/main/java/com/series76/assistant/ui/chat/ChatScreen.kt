@@ -16,7 +16,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,6 +31,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -46,8 +52,17 @@ import com.series76.assistant.ui.common.ErrorState
 import com.series76.assistant.ui.preview.PreviewFixtures
 import com.series76.assistant.ui.theme.Series76AssistantTheme
 
+/**
+ * [onOpenDebug] (sessionId, messageId or null for the whole conversation) is given only to
+ * developers; without it the chat has no Debug entry at all.
+ */
 @Composable
-fun ChatRoute(viewModel: ChatViewModel, title: String?, onBack: () -> Unit) {
+fun ChatRoute(
+    viewModel: ChatViewModel,
+    title: String?,
+    onBack: () -> Unit,
+    onOpenDebug: ((sessionId: String, messageId: String?) -> Unit)? = null,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     ChatScreen(
         state = state,
@@ -58,6 +73,8 @@ fun ChatRoute(viewModel: ChatViewModel, title: String?, onBack: () -> Unit) {
         onChip = viewModel::sendChip,
         onRetrySend = viewModel::retry,
         onRetryLoad = viewModel::loadHistory,
+        // Read when tapped: a new conversation gets its session id with the first answer.
+        onOpenDebug = onOpenDebug?.let { open -> { messageId -> viewModel.sessionId?.let { open(it, messageId) } } },
     )
 }
 
@@ -72,7 +89,10 @@ fun ChatScreen(
     onChip: (String) -> Unit,
     onRetrySend: (String) -> Unit,
     onRetryLoad: () -> Unit,
+    onOpenDebug: ((messageId: String?) -> Unit)? = null,
 ) {
+    // The menu only makes sense once there is an answer to inspect.
+    val hasAnswers = (state as? ChatUiState.Content)?.items?.any { it is ChatItem.Assistant } == true
     Scaffold(
         topBar = {
             TopAppBar(
@@ -81,6 +101,9 @@ fun ChatScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
                     }
+                },
+                actions = {
+                    if (onOpenDebug != null && hasAnswers) DebugMenu(onDebug = { onOpenDebug(null) })
                 },
             )
         },
@@ -93,7 +116,8 @@ fun ChatScreen(
                     error = state.error,
                     onRetry = onRetryLoad,
                 )
-                is ChatUiState.Content -> ChatContent(state, onInputChange, onSend, onChip, onRetrySend)
+                is ChatUiState.Content ->
+                    ChatContent(state, onInputChange, onSend, onChip, onRetrySend, onOpenDebug)
             }
         }
     }
@@ -106,6 +130,7 @@ private fun ChatContent(
     onSend: () -> Unit,
     onChip: (String) -> Unit,
     onRetrySend: (String) -> Unit,
+    onOpenDebug: ((messageId: String?) -> Unit)?,
 ) {
     val listState = rememberLazyListState()
     LaunchedEffect(state.items.size, state.isSending) {
@@ -142,6 +167,7 @@ private fun ChatContent(
                             item = item,
                             chipsEnabled = !state.isSending,
                             onChip = onChip,
+                            onDebug = onOpenDebug?.let { open -> { open(item.id) } },
                         )
                     }
                 }
@@ -149,6 +175,24 @@ private fun ChatContent(
             }
         }
         InputBar(state, onInputChange, onSend)
+    }
+}
+
+/** The ⋮ menu of the chat: today its only entry is Debug (developers). */
+@Composable
+private fun DebugMenu(onDebug: () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    IconButton(onClick = { expanded = true }) {
+        Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more_options))
+    }
+    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.debug_title)) },
+            onClick = {
+                expanded = false
+                onDebug()
+            },
+        )
     }
 }
 
@@ -198,6 +242,14 @@ private fun historyState(): ChatUiState.Content {
 private fun ChatHistoryPreview() {
     Series76AssistantTheme {
         ChatScreen(historyState(), "Conversación", {}, {}, {}, {}, {}, {})
+    }
+}
+
+@Preview(showBackground = true, heightDp = 900)
+@Composable
+private fun ChatHistoryDeveloperPreview() {
+    Series76AssistantTheme {
+        ChatScreen(historyState(), "Conversación", {}, {}, {}, {}, {}, {}, onOpenDebug = {})
     }
 }
 

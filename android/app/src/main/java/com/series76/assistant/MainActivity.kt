@@ -14,7 +14,7 @@ class MainActivity : ComponentActivity() {
         val container = (application as Series76App).container
         setContent {
             Series76AssistantTheme {
-                AppRoot(container.sessionManager, container.repository)
+                AppRoot(container.sessionManager, container.repository, container.debugRepository)
             }
         }
     }

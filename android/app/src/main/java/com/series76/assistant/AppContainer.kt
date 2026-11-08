@@ -4,7 +4,9 @@ import android.content.Context
 import com.series76.assistant.data.AndroidConnectivityChecker
 import com.series76.assistant.data.ApiCall
 import com.series76.assistant.data.ConversationRepository
+import com.series76.assistant.data.DebugRepository
 import com.series76.assistant.data.NetworkConversationRepository
+import com.series76.assistant.data.NetworkDebugRepository
 import com.series76.assistant.data.api.ApiJson
 import com.series76.assistant.data.api.Series76Api
 import com.series76.assistant.data.auth.AuthInterceptor
@@ -60,6 +62,8 @@ class AppContainer(context: Context, baseUrl: String = BuildConfig.API_BASE_URL)
             .also { sessions = it }
 
     val repository: ConversationRepository = NetworkConversationRepository(api, call)
+
+    val debugRepository: DebugRepository = NetworkDebugRepository(api, call)
 }
 
 /** Adds the Bearer token of [sessions] and reports 401s to it. Shared with the wiring test. */

@@ -13,6 +13,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,6 +29,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.series76.assistant.R
 import com.series76.assistant.data.AppError
 import com.series76.assistant.data.ConversationRepository
+import com.series76.assistant.data.DebugRepository
 import com.series76.assistant.data.auth.AuthState
 import com.series76.assistant.data.auth.SessionManager
 import com.series76.assistant.navigation.AppNavHost
@@ -40,7 +42,7 @@ import com.series76.assistant.ui.theme.Series76AssistantTheme
  * ([BranchViewModelStores]), so nothing of the previous session stays in memory or on a back stack.
  */
 @Composable
-fun AppRoot(sessions: SessionManager, repository: ConversationRepository) {
+fun AppRoot(sessions: SessionManager, repository: ConversationRepository, debugRepository: DebugRepository) {
     val session: SessionViewModel = viewModel(
         factory = viewModelFactory { initializer { SessionViewModel(sessions) } },
     )
@@ -63,7 +65,11 @@ fun AppRoot(sessions: SessionManager, repository: ConversationRepository) {
                 )
                 LoginRoute(login)
             }
-            is AuthState.SignedIn -> AppNavHost(repository, current.user, onSignOut = session::logout)
+            // Keyed by user (email and role): a restored back stack never outlives a role change,
+            // so a Debug screen saved for a developer is not restored into an engineer's graph.
+            is AuthState.SignedIn -> key(current.user) {
+                AppNavHost(repository, debugRepository, current.user, onSignOut = session::logout)
+            }
         }
     }
 }

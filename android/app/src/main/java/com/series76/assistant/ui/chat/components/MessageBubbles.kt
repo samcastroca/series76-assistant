@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -33,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -98,22 +100,35 @@ fun AssistantBubble(
     chipsEnabled: Boolean,
     onChip: (String) -> Unit,
     modifier: Modifier = Modifier,
+    /** Opens this answer's trace. Null (engineers): the icon is not composed at all. */
+    onDebug: (() -> Unit)? = null,
 ) {
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            shape = RoundedCornerShape(16.dp, 16.dp, 16.dp, 4.dp),
-            modifier = Modifier.widthIn(max = BubbleMaxWidth),
-        ) {
-            // The model writes Markdown (bold, lists); render it instead of showing the markers.
-            // Links it writes stay inert: a catalog answer has no reason to open external pages.
-            CompositionLocalProvider(LocalUriHandler provides InertUriHandler) {
-                Markdown(
-                    content = item.answer,
-                    colors = markdownColor(text = LocalContentColor.current),
-                    typography = markdownTypography(paragraph = MaterialTheme.typography.bodyLarge),
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                )
+        Row(verticalAlignment = Alignment.Bottom) {
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = RoundedCornerShape(16.dp, 16.dp, 16.dp, 4.dp),
+                modifier = Modifier.widthIn(max = BubbleMaxWidth).weight(1f, fill = false),
+            ) {
+                // The model writes Markdown (bold, lists); render it instead of showing the markers.
+                // Links it writes stay inert: a catalog answer has no reason to open external pages.
+                CompositionLocalProvider(LocalUriHandler provides InertUriHandler) {
+                    Markdown(
+                        content = item.answer,
+                        colors = markdownColor(text = LocalContentColor.current),
+                        typography = markdownTypography(paragraph = MaterialTheme.typography.bodyLarge),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    )
+                }
+            }
+            if (onDebug != null) {
+                IconButton(onClick = onDebug) {
+                    Icon(
+                        painterResource(R.drawable.ic_bug),
+                        contentDescription = stringResource(R.string.debug_open_trace),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
         item.warnings.forEach { warning ->

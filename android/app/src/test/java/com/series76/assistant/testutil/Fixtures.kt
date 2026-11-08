@@ -5,6 +5,7 @@ import com.series76.assistant.data.api.model.ConversationResponse
 import com.series76.assistant.data.api.model.LoginResponse
 import com.series76.assistant.data.api.model.MessageOut
 import com.series76.assistant.data.api.model.SessionSummary
+import com.series76.assistant.data.api.model.TraceOut
 import com.series76.assistant.data.api.model.UserOut
 import kotlinx.serialization.json.Json
 
@@ -34,4 +35,6 @@ object Fixtures {
     fun login(): LoginResponse = load("auth_login")
 
     fun me(): UserOut = load("auth_me")
+
+    fun trace(): TraceOut = load("trace")
 }

@@ -8,6 +8,7 @@ import com.series76.assistant.data.api.model.MessageStatus
 import com.series76.assistant.data.api.model.ResponseType
 import com.series76.assistant.data.api.model.Role
 import com.series76.assistant.data.api.model.SessionSummary
+import com.series76.assistant.data.api.model.TraceOut
 import com.series76.assistant.data.api.model.TurnWarning
 import com.series76.assistant.data.api.model.UserOut
 import com.series76.assistant.data.api.model.UserRole
@@ -98,6 +99,7 @@ class ContractDecodingTest {
             "error_budget_exceeded" to "budget_exceeded",
             "error_invalid_credentials" to "invalid_credentials",
             "error_not_authenticated" to "not_authenticated",
+            "error_forbidden" to "forbidden",
         ).forEach { (name, code) ->
             assertEquals(code, Fixtures.load<ApiErrorBody>(name, Fixtures.strictJson).error.code)
         }
@@ -118,5 +120,16 @@ class ContractDecodingTest {
     fun `isDeveloper reflects the role the server sends`() {
         assertTrue(UserOut("d@example.com", UserRole.DEVELOPER).isDeveloper)
         assertFalse(UserOut("e@example.com", UserRole.ENGINEER).isDeveloper)
+    }
+
+    @Test
+    fun `the trace decodes strictly and keeps unreported values null`() {
+        val trace = Fixtures.load<TraceOut>("trace", Fixtures.strictJson)
+        assertTrue(trace.toolCalls.isNotEmpty())
+        assertEquals(trace.toolCalls.sortedBy { it.seq }, trace.toolCalls)
+        assertTrue(trace.toolCalls.all { it.args.isNotEmpty() && it.latencyMs >= 0 })
+        assertTrue(trace.usage.isNotEmpty())
+        // The fake model reports no cost: it stays null, never 0.
+        assertTrue(trace.usage.all { it.costUsd == null })
     }
 }

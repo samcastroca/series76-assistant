@@ -6,6 +6,7 @@ import com.series76.assistant.data.api.model.LoginRequest
 import com.series76.assistant.data.api.model.LoginResponse
 import com.series76.assistant.data.api.model.MessageOut
 import com.series76.assistant.data.api.model.SessionSummary
+import com.series76.assistant.data.api.model.TraceOut
 import com.series76.assistant.data.api.model.UserOut
 import retrofit2.Response
 import retrofit2.http.Body
@@ -32,4 +33,7 @@ interface Series76Api {
 
     @DELETE("api/sessions/{id}")
     suspend fun deleteSession(@Path("id") sessionId: String): Response<Unit>
+
+    @GET("api/messages/{id}/trace")
+    suspend fun getTrace(@Path("id") messageId: String): TraceOut
 }
