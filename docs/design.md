@@ -85,7 +85,7 @@ El PDF de datos es un escaneo (cada página es una imagen), así que `pdfplumber
 5. **Salida revisable:** `data/processed/actuators.csv` y `catalog.json`, versionados en el repo y reproducibles byte a byte.
 6. **`load`:** carga idempotente en Postgres (upsert) desde `catalog.json`, ejecutada al arrancar con Docker Compose si la base está vacía. Docker y los tests nunca llaman al modelo de visión.
 
-**Tests de ingesta:** 68 part numbers; 4 sin datos; 5 sin CSA; y unos 10 valores verificados a mano. Por ejemplo, `765Y30-11300000/A` da 25,900 in-lb on/off y `763C00-11330C00/A` da 5,300 in-lb.
+**Tests de ingesta:** 68 part numbers; 4 sin datos; 5 sin CSA; y unos 10 valores verificados a mano. Los valores esperados están en `SPOT_CHECKS` de `backend/tests/test_ingest.py`, copiados a mano del PDF; este documento no repite cifras del catálogo.
 
 ## Agente LangChain
 
@@ -117,7 +117,7 @@ La unidad de búsqueda es el par (actuador, tipo de servicio), porque el torque 
 
 1. **Estructura:** el campo `products` de la respuesta se construye en el backend con la salida de las tools, no con el texto del LLM. La app dibuja las tarjetas desde ahí.
 2. **Prompt:** el LLM tiene instrucciones de no citar números fuera de las tools.
-3. **Verificación:** un validador extrae los números del `answer` y comprueba que existan en los resultados de tools del turno o de la sesión. Si alguno no aparece, se regenera una vez con un aviso; si persiste, se eliminan los números del texto y se remite a las tarjetas.
+3. **Verificación:** un validador extrae los números del `answer` y comprueba que existan en los resultados de tools del turno o de la sesión. Lo mismo con los part numbers: cada uno debe aparecer en esos resultados. Si alguno no aparece, o el texto muestra nombres de tools, nombres de campos de los resultados o JSON, se regenera una vez con un aviso; si persiste, se eliminan esos números, part numbers y detalles internos del texto y se remite a las tarjetas.
 
 **Contexto entre turnos:** el historial que recibe el modelo es solo el texto de los últimos turnos; los resultados de tools no se reenvían. La sesión guarda `active_parts` (los últimos part numbers mostrados) y `shown_parts`, que se inyectan en el system prompt, así "¿y cuánto consume?" se resuelve llamando de nuevo a la tool sin repetir números del historial. "Consume" se responde con Motor Power (W) y la FLA como contexto.
 
@@ -126,6 +126,8 @@ La unidad de búsqueda es el par (actuador, tipo de servicio), porque el torque 
 ## API REST
 
 La respuesta separa lo que ve el usuario (`answer`, `products`, `clarification`) de lo interno, que va en un endpoint de trazas aparte. Así el chat nunca recibe nombres de tools.
+
+Los valores `"<…>"` son marcadores: las cifras reales salen de la base de datos (ejemplos completos en los fixtures generados de `android/app/src/test/resources/`).
 
 ```json
 POST /api/conversation
@@ -143,11 +145,11 @@ POST /api/conversation
       "enclosure": "weatherproof",
       "power_supply": { "voltage_v": 220, "phase": 1, "current_type": "AC" },
       "certifications": ["CSA", "CE", "UKCA"],
-      "service": [ { "type": "modulating", "torque": {"in_lb": 15000, "nm": 1700}, "duty_cycle_pct": 35, "starts_per_hour": 840 } ],
-      "electrical": [ { "frequency_hz": 60, "speed_s": 88, "fla_a": 3.3, "lra_a": 3.8 }, { "frequency_hz": 50, "speed_s": 106, "fla_a": 3.2, "lra_a": 3.9 } ],
-      "motor_power_w": 180,
+      "service": [ { "type": "modulating", "torque": {"in_lb": "<in_lb>", "nm": "<nm>"}, "duty_cycle_pct": "<pct>", "cycles_per_hour": null, "starts_per_hour": "<n>" } ],
+      "electrical": [ { "frequency_hz": 60, "speed_s": "<s>", "fla_a": "<A>", "lra_a": "<A>" }, { "frequency_hz": 50, "speed_s": "<s>", "fla_a": "<A>", "lra_a": "<A>" } ],
+      "motor_power_w": "<W>",
       "notes": [],
-      "source": { "table": "Weatherproof 220V 1ph", "page": 1 }
+      "source": { "table": "wp_220v_1ph", "page": "<page>" }
     }
   ],
   "highlight_fields": ["torque", "speed_s"],
@@ -284,11 +286,11 @@ Cada caso borde tiene un `response_type` esperado y un test automatizado. La may
 | "763C" | Coincide con 3 modelos (110V, 220V, trifásico) | Preguntar con las 3 opciones | `clarification` |
 | `762A00-11330C00/A` | Listado como N/A | Existe, pero sin datos publicados | `no_data` |
 | "24V AC modulante" | El modulante de 24V es solo DC | Indicarlo; ofrecer 24V DC modulante o 24V AC/DC on/off | `no_match` |
-| "Explosionproof de 30,000 in-lb" | Máximo disponible: 25,900 in-lb | Indicar el máximo y la alternativa más cercana | `no_match` |
+| "Explosionproof de 30,000 in-lb" | Supera el máximo explosionproof del catálogo | Indicar el máximo y la alternativa más cercana | `no_match` |
 | "Tamaño 7 con CSA" | Tamaños 6 y 7 no tienen CSA | Explicar el conflicto | `no_match` |
 | "Tengo 230V" | Dentro de 220V ±10% | Usar la tabla de 220V y decirlo | `recommendation` |
 | "¿Y cuánto consume?" tras una consulta | Seguimiento | Usar el part number activo; potencia del motor y FLA | `detail` |
-| "Compara 764A y 764B a 110V" | Comparación | Tabla comparativa | `comparison` |
+| "Compara 764A y 764B a 110V" | Comparación | Texto breve con las diferencias clave (sin tablas Markdown); los datos van en `products` | `comparison` |
 | "Recomiéndame uno" | Faltan requisitos | Pedir voltaje, servicio, torque y encapsulado | `clarification` |
 | "¿Cuál es el precio?" | Dato que no está en las tablas | Decir que no está disponible | `detail` o `no_data` |
 | Fuera de tema o inyección de prompt | — | Sin llamar a tools: rechazo breve y redirección al catálogo | `clarification` |
