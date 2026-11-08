@@ -19,8 +19,10 @@ def test_real_provider_requires_model(provider) -> None:
 
 
 def test_blank_values_from_compose_count_as_unset() -> None:
-    s = Settings(agent_model="", fallback_model="", openrouter_api_key="")
+    s = Settings(agent_model="", fallback_model="", openrouter_api_key="", daily_budget_usd="")
     assert s.agent_model is None and s.fallback_model is None and s.openrouter_api_key is None
+    assert s.daily_budget_usd is None
+    assert Settings(daily_budget_usd=0).daily_budget_usd == 0  # zero is a cap, not unset
     with pytest.raises(ValidationError, match="OPENROUTER_API_KEY"):
         Settings(llm_provider="openrouter", agent_model="some/model", openrouter_api_key="")
 

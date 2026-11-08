@@ -1,9 +1,10 @@
 """Application settings. The only module that reads environment variables."""
 
+from decimal import Decimal
 from functools import lru_cache
 from typing import Literal, Self
 
-from pydantic import SecretStr, field_validator, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -25,6 +26,9 @@ class Settings(BaseSettings):
     history_turns: int = 10
     max_query_chars: int = 1000
     debug_api: bool = False  # exposes GET /api/messages/{id}/trace
+    # Daily LLM spend cap in USD (UTC day, from llm_usage.cost_usd). Unset: no cap. Over it, a
+    # turn answers 503 budget_exceeded before calling the model.
+    daily_budget_usd: Decimal | None = Field(default=None, ge=0)
 
     # Ingest `extract` stage only (human-run): vision model via Google AI Studio or OpenRouter.
     # INGEST_OPENROUTER_API_KEY is a separate key; OPENROUTER_API_KEY is never read here.
@@ -34,11 +38,16 @@ class Settings(BaseSettings):
     ingest_openrouter_api_key: SecretStr | None = None
 
     @field_validator(
-        "agent_model", "fallback_model", "openrouter_api_key", "google_api_key", mode="before"
+        "agent_model",
+        "fallback_model",
+        "openrouter_api_key",
+        "google_api_key",
+        "daily_budget_usd",
+        mode="before",
     )
     @classmethod
-    def _blank_is_unset(cls, value: str | None) -> str | None:
-        return value or None  # compose passes unset variables as ""
+    def _blank_is_unset(cls, value: object) -> object:
+        return None if value == "" else value  # compose passes unset variables as ""
 
     @model_validator(mode="after")
     def _real_provider_is_configured(self) -> Self:

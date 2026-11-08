@@ -32,6 +32,7 @@ services:
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
       DEBUG_API: ${DEBUG_API:-false}
+      DAILY_BUDGET_USD: ${DAILY_BUDGET_USD:-}
     ports:
       - "8000:8000"
     restart: unless-stopped

@@ -272,6 +272,14 @@ async def test_unknown_session_returns_404(client) -> None:
         assert_error(await c.get(f"/api/sessions/{sid}/messages"), 404, "session_not_found")
 
 
+async def test_spent_daily_budget_returns_503_budget_exceeded(client) -> None:
+    async with client([lookup(), AIMessage("Listo.")], daily_budget_usd=0) as c:
+        r = await c.post("/api/conversation", json={"query": "hola"})
+        sessions = (await c.get("/api/sessions")).json()
+    assert_error(r, 503, "budget_exceeded")
+    assert sessions == []
+
+
 async def test_llm_failure_returns_503_and_keeps_the_user_message(client) -> None:
     script = [lookup(), AIMessage("Listo."), ConnectionError("provider down: secret detail")]
     async with client(script) as c:

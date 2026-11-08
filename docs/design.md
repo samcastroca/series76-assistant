@@ -173,7 +173,7 @@ Cada producto lleva además `series_size`, `variant`, `csa_certified`, `hazardou
 
 Cambio respecto a lo sugerido: la traza vive en `/api/messages/{id}/trace` y no dentro de la respuesta del chat. Esto mantiene liviano el payload del usuario. La ruta solo existe con `DEBUG_API=true`; si no, responde 404 y no aparece en `/docs`.
 
-Errores con un formato único `{ "error": { "code", "message" } }`: 400 (`empty_query`, `query_too_long`, `invalid_request`), 404 (`session_not_found`, `message_not_found`, `not_found`), 405 (`method_not_allowed`), 503 (`llm_unavailable`) cuando el proveedor LLM falla, y 500 (`internal_error`) sin detalles. Un fallo del LLM nunca deja la sesión a medias. `/health` es la excepción: es un informe de estado y devuelve su propio cuerpo también con 503 cuando la base no responde.
+Errores con un formato único `{ "error": { "code", "message" } }`: 400 (`empty_query`, `query_too_long`, `invalid_request`), 404 (`session_not_found`, `message_not_found`, `not_found`), 405 (`method_not_allowed`), 503 (`llm_unavailable`) cuando el proveedor LLM falla y 503 (`budget_exceeded`) cuando se agotó el tope diario, y 500 (`internal_error`) sin detalles. Un fallo del LLM nunca deja la sesión a medias. `/health` es la excepción: es un informe de estado y devuelve su propio cuerpo también con 503 cuando la base no responde.
 
 ## Persistencia de conversaciones y trazas
 
@@ -229,7 +229,7 @@ Decisión: no se usan embeddings ni pgvector. Los datos son 68 filas con campos 
 - `LLM_PROVIDER=openrouter|google|fake`. El modo `fake` responde con un guion fijo y llama tools reales: sirve para tests y CI sin gastar.
 - `max_tokens` acotado (1500 por defecto, ver ADR 0005) y temperatura 0.
 - Historial limitado y resultados de tools compactos (solo los campos necesarios).
-- Registro de costo por mensaje en `llm_usage` y un tope diario configurable (`DAILY_BUDGET_USD`) que responde 503 al superarse.
+- Registro de costo por mensaje en `llm_usage` y un tope diario configurable (`DAILY_BUDGET_USD`, sin valor = sin tope). Antes de llamar al modelo se suma `cost_usd` del día UTC; si ya alcanzó el tope, el turno responde 503 `budget_exceeded` y no guarda nada. El costo que el proveedor no informa cuenta como cero, y borrar una conversación borra también su uso (limitación aceptada: es un freno de gasto, no contabilidad).
 - Prompt caching del proveedor cuando esté disponible, con el system prompt estable al inicio.
 - Un set de unas 30 preguntas de evaluación que se ejecuta con la key real solo 2 o 3 veces en total. Costo estimado: menos de USD 1 (estimación propia; depende del modelo elegido).
 

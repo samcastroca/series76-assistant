@@ -11,7 +11,9 @@ transaction.
   A new session is not created, since the 503 body cannot return its id.
 - A per-turn call limit or an empty answer returns a controlled 'error' answer; the internal
   detail goes to the trace only.
-- The call limits are per turn: the validator's retry shares the first run's budget."""
+- The call limits are per turn: the validator's retry shares the first run's budget.
+- With DAILY_BUDGET_USD set, a turn whose day (UTC) already spent the cap raises
+  BudgetExceeded (503) before the model runs; nothing is stored."""
 
 import logging
 import re
@@ -73,6 +75,11 @@ class LlmUnavailable(ConversationError):
     code = "llm_unavailable"
 
 
+class BudgetExceeded(ConversationError):
+    status_code = 503
+    code = "budget_exceeded"
+
+
 class _ProviderError(Exception):
     """The agent run failed for a reason other than a call limit (provider, network, auth)."""
 
@@ -104,6 +111,7 @@ class ConversationService:
 
     async def handle(self, session_id: uuid.UUID | None, query: str) -> ConversationResponse:
         loaded = await self._load(session_id, query)
+        await self._check_budget()
         ctx = AgentContext(
             sessionmaker=self.sessionmaker,
             active_parts=loaded.state.get("active_parts", []),
@@ -156,6 +164,16 @@ class ConversationService:
                 to_messages(rows),
                 await repo.session_tool_results(db, session.id),
             )
+
+    async def _check_budget(self) -> None:
+        budget = self.settings.daily_budget_usd
+        if budget is None:
+            return
+        async with self.sessionmaker() as db:
+            spent = await repo.spent_today(db)
+        if spent >= budget:
+            logger.warning("daily LLM budget reached: %s of %s USD", spent, budget)
+            raise BudgetExceeded("The daily usage limit was reached. Try again tomorrow.")
 
     async def _save_turn(
         self,

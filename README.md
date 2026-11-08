@@ -94,6 +94,7 @@ hardcoded.
 | `HISTORY_TURNS` | `10` | Earlier turns sent to the model |
 | `MAX_QUERY_CHARS` | `1000` | Longest accepted query |
 | `DEBUG_API` | `false` | Mounts the trace endpoint for the app's Debug screen |
+| `DAILY_BUDGET_USD` | none (no cap) | Daily LLM spend cap (UTC day, from the cost the provider reports); over it a turn answers 503 `budget_exceeded` without calling the model |
 | `DATABASE_URL` | local Postgres | Async SQLAlchemy URL (compose points it at the `db` service) |
 
 ### Development

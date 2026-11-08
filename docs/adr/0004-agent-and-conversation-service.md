@@ -44,6 +44,10 @@ internals reach the chat, conversations survive a restart, and the paid key is u
   body (fixed error shape) cannot return a session id. A call limit or an empty answer gives a
   fixed bilingual fallback answer with `response_type = "error"`; the detail is kept in
   `payload.internal_error`, which only the trace endpoint returns.
+- **Daily budget.** With `DAILY_BUDGET_USD` set, the service sums `llm_usage.cost_usd` of the
+  current UTC day before running the agent and raises a 503 `budget_exceeded` once the cap is
+  reached; nothing is stored, so the app retries like any other failed send. It is a spend
+  brake, not a hard limit: turns already in flight when the cap is crossed still finish.
 - **Fake provider.** `LLM_PROVIDER=fake` uses `RuleBasedFakeModel`, a LangChain chat model that
   emits tool calls by fixed rules and answers in Spanish without numbers. Tests use
   `ScriptedFakeModel`, which replays a step-by-step script (messages, callables or exceptions).

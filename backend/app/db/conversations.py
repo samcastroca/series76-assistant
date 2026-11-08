@@ -4,6 +4,7 @@ LLM usage. Functions never commit; the conversation service owns the transaction
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import delete, func, select, update
@@ -129,6 +130,18 @@ async def add_trace(
     db.add_all(ToolCall(message_id=message_id, **c.model_dump()) for c in tool_calls)
     db.add_all(LlmUsage(message_id=message_id, **u.model_dump()) for u in usage)
     await db.flush()
+
+
+async def spent_today(db: AsyncSession) -> Decimal:
+    """LLM cost of every message created since 00:00 UTC, by the database clock (the same clock
+    that sets created_at). NULL costs (not reported by the provider) count as zero."""
+    midnight_utc = func.timezone("UTC", func.date_trunc("day", func.timezone("UTC", func.now())))
+    stmt = (
+        select(func.coalesce(func.sum(LlmUsage.cost_usd), 0))
+        .join(Message, Message.id == LlmUsage.message_id)
+        .where(Message.created_at >= midnight_utc)
+    )
+    return Decimal(await db.scalar(stmt))
 
 
 async def touch_session(db: AsyncSession, session_id: uuid.UUID, state: dict[str, Any]) -> None:

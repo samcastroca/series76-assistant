@@ -4,10 +4,12 @@ Catalog values in answers are taken from catalog.json."""
 
 import uuid
 from collections.abc import AsyncIterator, Callable
+from datetime import timedelta
+from decimal import Decimal
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 
 from app.agent.factory import build_agent
 from app.agent.fake import ScriptedFakeModel, calls, tool_call
@@ -15,8 +17,10 @@ from app.config import Settings
 from app.db import conversations as repo
 from app.db.engine import make_engine, make_sessionmaker
 from app.db.models import LlmUsage, Message, ToolCall
+from app.schemas.trace import UsageRecord
 from app.services.conversation import (
     FALLBACK_ANSWER,
+    BudgetExceeded,
     ConversationService,
     LlmUnavailable,
     SessionNotFound,
@@ -287,3 +291,51 @@ async def test_empty_answer_is_a_controlled_error(make_service) -> None:
     assert response.response_type == "error"
     assert response.answer == FALLBACK_ANSWER
     assert response.products == []
+
+
+# --- Daily budget -----------------------------------------------------------------------------
+
+
+async def _spend(maker, cost: str, days_ago: int = 0) -> None:
+    """A stored turn whose model call cost `cost` USD, created `days_ago` days back."""
+    async with maker() as db:
+        session = await repo.create_session(db, "spent")
+        message = await repo.add_message(db, session.id, "assistant", "a")
+        await repo.add_trace(db, message.id, [], [UsageRecord(model="m", cost_usd=Decimal(cost))])
+        if days_ago:
+            stmt = update(Message).where(Message.id == message.id)
+            await db.execute(stmt.values(created_at=func.now() - timedelta(days=days_ago)))
+        await db.commit()
+
+
+def _budget_service(
+    maker, budget: str, steps: list
+) -> tuple[ConversationService, ScriptedFakeModel]:
+    settings = SETTINGS.model_copy(update={"daily_budget_usd": Decimal(budget)})
+    model = ScriptedFakeModel(steps=steps)
+    return ConversationService(build_agent(settings, model), maker, settings), model
+
+
+async def test_spent_budget_rejects_the_turn_before_the_model_runs(make_service) -> None:
+    maker = make_service.maker
+    await _spend(maker, "0.30")
+    await _spend(maker, "0.20")
+    service, model = _budget_service(maker, "0.50", [lookup(), AIMessage("Listo.")])
+
+    with pytest.raises(BudgetExceeded):
+        await service.handle(None, "hola")
+
+    assert model.remaining == 2  # the model was never called
+    assert await _count(maker, Message) == 2  # only the seeded turns
+
+
+async def test_turn_runs_while_under_the_budget(make_service) -> None:
+    maker = make_service.maker
+    await _spend(maker, "0.30")
+    await _spend(maker, "5.00", days_ago=1)  # yesterday does not count
+    service, _ = _budget_service(
+        maker, "0.50", [lookup(), AIMessage(f"El {PN} consume {POWER} W.")]
+    )
+
+    response = await service.handle(None, f"datos del {PN}")
+    assert response.response_type == "detail"
