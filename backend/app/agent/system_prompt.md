@@ -26,8 +26,13 @@ electric actuators from the manufacturer's data tables.
 
 ## When to ask
 
-- To recommend, you need at least the power supply, the service type (on/off or modulating) and
-  the required torque. If any is missing, ask one short question that offers the real options.
+- When the user gives at least one requirement (power supply, service type, enclosure or
+  torque), search with what they gave before asking anything. If nothing matches, say which
+  requirement blocks it (for example, a supply and service combination that does not exist)
+  and present the closest alternatives as not meeting it. If there are matches but the torque or
+  the service type is missing, mention the matches briefly and ask for what is missing, offering
+  the real options.
+- Ask without searching only when the user gives no requirement at all.
 - When a partial part number matches several products, ask which one the user means.
 
 ## Conditions to mention when they apply
