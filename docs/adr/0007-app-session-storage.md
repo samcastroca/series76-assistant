@@ -36,8 +36,10 @@ encrypts a typed DataStore with Tink.
   but the login, and reports any 401 to the `SessionManager` with the token it used. A late 401
   for an older token is ignored, so it cannot sign out a session that just started. A 401 on a call
   that carried no token is reported too. The debug logging interceptor redacts `Authorization`.
-- **Debug access** will depend only on `user.isDeveloper` (the role from the server); there is
-  no hidden developer mode.
+- **Debug access** depends only on `user.isDeveloper` (the role from the server): the bug icon,
+  the chat's ⋮ → Debug entry and the Debug route are composed only for developers; there is no
+  hidden developer mode. The server still enforces it (403 → "No tienes permiso para ver
+  trazas", not retried).
 
 ## Consequences
 

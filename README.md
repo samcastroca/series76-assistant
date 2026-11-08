@@ -6,8 +6,8 @@ actuator at 220 V") and get answers backed by the published catalog tables.
 
 > **Status:** the ingestion, the agent, the REST API and the evaluation suite run locally
 > (`docker compose up`, `make eval-fast`). The Android app has its first layer: the
-> login, the conversation list and the chat with product cards. Comparison tables and the debug
-> screen come next.
+> login, the conversation list, the chat with product cards and, for developers, the Debug screen
+> with each answer's trace. Comparison tables come next.
 
 ## How it works
 
@@ -152,6 +152,13 @@ cd android
   shows the email and signs out. The token, email and role are stored encrypted (DataStore +
   Tink, key in the Android Keystore) and excluded from backups; the password is never stored
   ([ADR 0007](docs/adr/0007-app-session-storage.md)).
+- **Debug (developer role only):** sign in as `developer@example.com`. Each assistant answer
+  shows a bug icon that opens its trace, and the chat's ⋮ menu → Debug opens the traces of the
+  whole conversation: the tool calls in order (name, latency, arguments and result as foldable
+  JSON), and each model call's model, tokens and cost ("no informado" when the provider does not
+  report it). Latency is per tool call; the backend does not record the model's. For an
+  engineer neither entry exists, and a 403 from the trace endpoint shows "No tienes permiso para
+  ver trazas" without retrying.
 
 - **Backend URL:** the app calls `http://10.0.2.2:8000`, which is the host machine as seen from
   the emulator. To use another address, set `API_BASE_URL=http://<host>:8000` in
