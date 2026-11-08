@@ -374,29 +374,3 @@ Test users, created by the seed on the first start:
 Set `SEED_*_PASSWORD` in `.env` before the first start to use other passwords.
 
 **Voice messages: not implemented.**
-
-## Known limitations
-
-- **No comparison table in the app yet.** The backend returns `response_type = comparison` with
-  every product in `products`, but the app shows them as product cards, not side by side.
-- **Model latency is not recorded.** The trace has latency per tool call only.
-- **The fallback model is untested on real traffic:** no eval run triggered it.
-- **The latest full eval predates the answer-format metric**, so that metric has no full-run
-  score yet.
-- **Source limits carried into the answers:** Nm values are rounded in the PDF; the 3-phase
-  table has a single torque column, so its service type is `unspecified`; 4 rows of that table
-  are N/A and have no specs.
-- **The eval scores behavior, not prose.** Wording and tone (for example, mixing "tú" and
-  "usted" in Spanish) are not measured; read a few answers in the results file after a run.
-- **Plain HTTP only for local hosts** in the app; any other backend address needs HTTPS.
-- **The numeric validator has accepted gaps** ([ADR 0004](docs/adr/0004-agent-and-conversation-service.md)):
-  allowlisted values (1-7, 10, 50, 60) are never flagged, a number backed by any result of the
-  session passes even if the sentence attributes it to another product, and numbers glued to
-  letters are not read.
-- **The compose `api` service loads the whole `.env`**, including keys it never uses (the ingest
-  and LangSmith keys). Keep those empty in the `.env` used to run the API.
-
-## Built with Claude Code
-
-The project is developed with Claude Code. [`CLAUDE.md`](CLAUDE.md) holds the rules the agent
-follows, and `.claude/` holds its settings, a reviewer agent and project skills.
