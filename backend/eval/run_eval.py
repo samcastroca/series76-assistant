@@ -312,7 +312,11 @@ def main(argv: list[str] | None = None, transport: httpx.BaseTransport | None = 
             return 2
         model = health.get("agent_model") or server_provider or "unknown"
 
-        cases = select(load_cases(), args.fast, args.category, args.ids)
+        all_cases = load_cases()
+        if unknown := sorted(set(args.ids or []) - {c["id"] for c in all_cases}):
+            print(f"Unknown case ids: {', '.join(unknown)}", file=sys.stderr)
+            return 1
+        cases = select(all_cases, args.fast, args.category, args.ids)
         if not cases:
             print("No cases selected.", file=sys.stderr)
             return 1

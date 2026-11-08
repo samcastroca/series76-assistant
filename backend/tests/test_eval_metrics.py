@@ -213,6 +213,15 @@ def test_runner_refuses_a_paid_local_provider_without_confirmation(monkeypatch) 
     assert seen == ["/health"]
 
 
+def test_runner_rejects_unknown_case_ids(monkeypatch) -> None:
+    """Regression: a typo in --ids silently ran fewer cases."""
+    monkeypatch.delenv("LLM_PROVIDER", raising=False)
+    seen: list[str] = []
+    argv = ["--ids", "out-of-scope-capital", "no-such-case"]
+    assert run_eval.main(argv, transport=_transport("fake", seen)) == 1
+    assert seen == ["/health"]  # stopped before any conversation call
+
+
 def test_runner_requires_the_debug_trace_endpoint(monkeypatch) -> None:
     monkeypatch.delenv("LLM_PROVIDER", raising=False)
 
