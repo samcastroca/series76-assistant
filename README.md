@@ -115,6 +115,7 @@ while the backend is up.
 cd android
 ./gradlew test            # unit tests: API contract, repository errors, ViewModels
 ./gradlew assembleDebug   # build the app
+./gradlew connectedAndroidTest   # Compose UI tests (needs a device or emulator, unlocked)
 ```
 
 - **Backend URL:** the app calls `http://10.0.2.2:8000`, which is the host machine as seen from

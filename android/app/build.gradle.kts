@@ -71,6 +71,7 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.kotlinx.serialization)
     implementation(libs.okhttp)
+    implementation(libs.markdown.renderer.m3) // renders the model's Markdown answers
     implementation(libs.okhttp.logging.interceptor) // installed only when BuildConfig.DEBUG
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

@@ -19,19 +19,26 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.mikepenz.markdown.m3.Markdown
+import com.mikepenz.markdown.m3.markdownColor
+import com.mikepenz.markdown.m3.markdownTypography
 import com.series76.assistant.R
 import com.series76.assistant.data.AppError
 import com.series76.assistant.data.api.model.ConversationResponse
@@ -43,6 +50,10 @@ import com.series76.assistant.ui.preview.PreviewFixtures
 import com.series76.assistant.ui.theme.Series76AssistantTheme
 
 private val BubbleMaxWidth = 320.dp
+
+private object InertUriHandler : UriHandler {
+    override fun openUri(uri: String) = Unit
+}
 
 @Composable
 fun UserBubble(
@@ -94,7 +105,16 @@ fun AssistantBubble(
             shape = RoundedCornerShape(16.dp, 16.dp, 16.dp, 4.dp),
             modifier = Modifier.widthIn(max = BubbleMaxWidth),
         ) {
-            Text(item.answer, Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+            // The model writes Markdown (bold, lists); render it instead of showing the markers.
+            // Links it writes stay inert: a catalog answer has no reason to open external pages.
+            CompositionLocalProvider(LocalUriHandler provides InertUriHandler) {
+                Markdown(
+                    content = item.answer,
+                    colors = markdownColor(text = LocalContentColor.current),
+                    typography = markdownTypography(paragraph = MaterialTheme.typography.bodyLarge),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                )
+            }
         }
         item.warnings.forEach { warning ->
             Text(

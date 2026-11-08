@@ -257,7 +257,7 @@ Android con Kotlin y Jetpack Compose. El emulador corre en Windows, macOS y Linu
 
 **Fixtures:** los JSON de `android/app/src/test/resources/` se generan desde el API real con `make android-fixtures` (LLM fake, base desechable) y alimentan los tests y los `@Preview`. Un test del backend falla si quedan desactualizados.
 
-El texto del `answer` nunca lleva tablas; los números se leen desde `products`. Esto cumple el requisito de no mostrar nombres de tools ni detalles internos.
+El modelo redacta el `answer` en Markdown y la burbuja lo renderiza (negrita, listas, encabezados) con `multiplatform-markdown-renderer`. El texto del `answer` nunca lleva tablas; los números se leen desde `products`. Esto cumple el requisito de no mostrar nombres de tools ni detalles internos.
 
 **Acceso al debug:** mantener presionada una respuesta del asistente abre su traza. Esta opción solo existe si el modo desarrollador está activo: se activa tocando 7 veces el título de la pantalla de Conversaciones, y en builds `debug` viene activo por defecto. Se documenta en el README.
 
