@@ -28,9 +28,16 @@ internals reach the chat, conversations survive a restart, and the paid key is u
   reused only as the clarification question. A turn without tool calls is a `clarification`.
 - **Numeric validator.** Every number in the answer must appear in a tool result of the turn or
   the session, or in the allowlist (50/60 Hz, 10 %, 5 %, sizes 1-7). Part numbers and the product
-  name are masked first. Ambiguous notation ("1,500") is accepted if any reading is backed. On
-  failure, or if the answer names a tool, the agent is retried once with a note; if that fails,
-  the unbacked numbers are stripped and the turn gets `numbers_removed`.
+  name are masked from that check; each part number must instead be one that a tool result of
+  the turn or the session contains (a short name such as "763C" counts when it is the start of
+  one). Ambiguous notation ("1,500") is accepted if any reading is backed. On failure, or if the
+  answer shows internals (a tool name, a snake_case field name of the tool schemas, or a JSON
+  object), the agent is retried once with a note; if that fails, the unbacked numbers and part
+  numbers are stripped (the turn gets `numbers_removed`) and the internals are removed.
+  Known gaps, accepted: an allowlisted value (1-7, 10, 50, 60) that is also a catalog value is
+  never flagged even if attributed to the wrong product; a number is accepted if it appears in
+  any result of the session, not necessarily for the product the sentence names; numbers glued
+  to letters ("AC220") are not read.
 - **History** sent to the model is the plain text of the last `HISTORY_TURNS` turns. Tool results
   are not replayed; the session prompt lists the active and earlier part numbers, and the agent
   calls the tool again for any value. This keeps prompts small and stops the model from

@@ -25,13 +25,15 @@ from langchain.agents.middleware.model_call_limit import ModelCallLimitExceededE
 from langchain.agents.middleware.tool_call_limit import ToolCallLimitExceededError
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langgraph.graph.state import CompiledStateGraph
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agent.context import AgentContext
 from app.agent.tools import TOOLS
-from app.agent.validator import strip_numbers, unsupported_numbers
+from app.agent.validator import strip_numbers, unsupported_numbers, unsupported_part_numbers
 from app.config import Settings
 from app.db import conversations as repo
+from app.schemas import catalog as catalog_schemas
 from app.schemas.conversation import ConversationResponse
 from app.services.history import to_messages, update_parts
 from app.services.products import TurnView, build_view
@@ -48,6 +50,24 @@ FALLBACK_ANSWER = (
 _TOOL_NAMES = re.compile(
     "|".join(re.escape(t.name).replace("_", "[_ ]") for t in TOOLS), re.IGNORECASE
 )
+# Field names of the tool schemas and results ("tolerance_applied", "current_type"): only the
+# snake_case ones, since single words like "status" are also plain language.
+_FIELD_NAMES = re.compile(
+    r"(?<![0-9A-Za-z_])(?:"
+    + "|".join(
+        re.escape(name)
+        for model in vars(catalog_schemas).values()
+        if isinstance(model, type)
+        and issubclass(model, BaseModel)
+        and model.__module__ == catalog_schemas.__name__
+        for name in model.model_fields
+        if "_" in name
+    )
+    + r")(?![0-9A-Za-z_])",
+    re.IGNORECASE,
+)
+# A JSON object: braces around at least one quoted key and a colon.
+_JSON_OBJECT = re.compile(r'\{[^{}]*"[^{}"]*"\s*:[^{}]*\}')
 _RETRY_NOTE = (
     "Automatic check of your previous answer: {problems}. Rewrite the answer for the user. "
     "Use only numbers that appear in tool results of this conversation (call a tool again if "
@@ -243,11 +263,12 @@ class ConversationService:
             if not _problems(answer, ctx, loaded.earlier_results):
                 return answer, []
 
-        bad = unsupported_numbers(answer, [*ctx.recorder.result_dumps, *loaded.earlier_results])
+        results = [*ctx.recorder.result_dumps, *loaded.earlier_results]
+        bad = unsupported_numbers(answer, results) + unsupported_part_numbers(answer, results)
         stripped = strip_numbers(answer, bad)
-        if _TOOL_NAMES.search(stripped):
-            logger.warning("removing tool names from the answer")
-            stripped = _TOOL_NAMES.sub("", stripped)
+        if _has_internals(stripped):
+            logger.warning("removing internal details from the answer")
+            stripped = _strip_internals(stripped)
         return stripped, ["numbers_removed"] if bad else []
 
     async def _invoke(self, messages: list[BaseMessage], ctx: AgentContext) -> list[BaseMessage]:
@@ -264,14 +285,30 @@ class ConversationService:
 
 def _problems(answer: str, ctx: AgentContext, earlier_results: list[dict[str, Any]]) -> list[str]:
     problems = []
-    bad = unsupported_numbers(answer, [*ctx.recorder.result_dumps, *earlier_results])
+    results = [*ctx.recorder.result_dumps, *earlier_results]
+    bad = unsupported_numbers(answer, results)
     if bad:
         problems.append(
             "these numbers are not in any tool result: " + ", ".join(t.text for t in bad)
         )
-    if _TOOL_NAMES.search(answer):
-        problems.append("it mentions internal tool names")
+    bad_parts = unsupported_part_numbers(answer, results)
+    if bad_parts:
+        problems.append(
+            "these part numbers are not in any tool result: " + ", ".join(t.text for t in bad_parts)
+        )
+    if _has_internals(answer):
+        problems.append("it shows internal details (tool names, result field names or raw data)")
     return problems
+
+
+def _has_internals(text: str) -> bool:
+    return any(p.search(text) for p in (_TOOL_NAMES, _FIELD_NAMES, _JSON_OBJECT))
+
+
+def _strip_internals(text: str) -> str:
+    while (inner_removed := _JSON_OBJECT.sub("", text)) != text:  # nested objects, inside out
+        text = inner_removed
+    return _FIELD_NAMES.sub("", _TOOL_NAMES.sub("", text))
 
 
 def _final_text(messages: list[BaseMessage]) -> str | None:

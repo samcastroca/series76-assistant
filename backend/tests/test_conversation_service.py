@@ -290,6 +290,48 @@ async def test_tool_names_are_removed_when_the_retry_repeats_them(make_service) 
     assert "actuator" not in response.answer.lower()
 
 
+INVENTED_PN = "767C99-99999999/Z"  # well formed, not in the catalog
+
+
+async def test_unbacked_part_number_is_retried_then_stripped(make_service) -> None:
+    assert INVENTED_PN not in {r.part_number for r in CATALOG}
+    notes: list[str] = []
+
+    def still_bad(messages):
+        notes.append(str(messages[-1].content))
+        return AIMessage(f"Te sirve el {PN} o el {INVENTED_PN}.")
+
+    first = AIMessage(f"Te sirve el {PN} o el {INVENTED_PN}.")
+    response = await make_service([lookup(), first, still_bad]).handle(USER, None, "q")
+
+    assert INVENTED_PN in notes[0]
+    assert INVENTED_PN not in response.answer
+    assert PN in response.answer  # the part number the tool returned stays
+    assert "numbers_removed" in response.warnings
+
+
+async def test_short_name_of_a_returned_part_number_is_backed(make_service) -> None:
+    answer = AIMessage(f"El {PN[:4]} es el modelo.")
+    response = await make_service([lookup(), answer]).handle(USER, None, "q")
+    assert response.answer == f"El {PN[:4]} es el modelo."
+    assert response.warnings == []
+
+
+async def test_result_field_names_in_the_answer_are_retried(make_service) -> None:
+    leak = AIMessage("Revisé current_type y tolerance_applied.")
+    response = await make_service([lookup(), leak, AIMessage("Aquí está.")]).handle(USER, None, "q")
+    assert response.answer == "Aquí está."
+
+
+async def test_raw_json_and_field_names_are_removed_when_the_retry_repeats_them(
+    make_service,
+) -> None:
+    leak = AIMessage('Aquí está {"status": "found", "actuator": {"data_available": true}} y fin.')
+    response = await make_service([lookup(), leak, leak]).handle(USER, None, "q")
+    assert "{" not in response.answer and "data_available" not in response.answer
+    assert response.answer.startswith("Aquí está") and response.answer.endswith("y fin.")
+
+
 async def test_numbers_only_in_history_text_are_not_backed(make_service) -> None:
     service = make_service(
         [

@@ -4,7 +4,8 @@ the session, or in a small allowlist. Pure functions, no LLM.
 A printed number can be read more than one way ("1,500" is 1500 in a catalog and 1.5 in Spanish
 decimal notation), so each token yields its readings and is accepted when any reading is backed.
 Part numbers ("763B00-11320000/A", "763C") and the product name "Series 76" are masked first:
-they are identifiers, not values."""
+they are identifiers, not values. Part numbers get their own check instead: each one in the answer
+must be a part number, or the start of one, that appears in a tool result."""
 
 import re
 from collections.abc import Iterable
@@ -95,6 +96,41 @@ def numbers_in(results: Iterable[Any]) -> set[Decimal]:
 def unsupported_numbers(answer: str, results: Iterable[Any]) -> list[NumberToken]:
     allowed = numbers_in(results) | ALLOWLIST
     return [t for t in extract_numbers(answer) if not (t.readings & allowed)]
+
+
+def _part_key(text: str) -> str:
+    return re.sub(r"[^0-9A-Z]", "", text.upper())
+
+
+def part_numbers_in(results: Iterable[Any]) -> set[str]:
+    """Every part number inside tool results, as a key without separators or case."""
+    found: set[str] = set()
+
+    def walk(value: Any) -> None:
+        if isinstance(value, str):
+            found.update(_part_key(m.group()) for m in PART_NUMBER.finditer(value))
+        elif isinstance(value, dict):
+            for v in value.values():
+                walk(v)
+        elif isinstance(value, list | tuple):
+            for v in value:
+                walk(v)
+
+    for result in results:
+        walk(result)
+    return found
+
+
+def unsupported_part_numbers(answer: str, results: Iterable[Any]) -> list[NumberToken]:
+    """Part numbers in the answer that no tool result backs. A short name ("763C") is backed when
+    it is the start of a part number in the results."""
+    known = part_numbers_in(results)
+    out = []
+    for m in PART_NUMBER.finditer(answer):
+        key = _part_key(m.group())
+        if not any(k.startswith(key) for k in known):
+            out.append(NumberToken(m.group(), m.start(), m.end(), frozenset()))
+    return out
 
 
 def strip_numbers(answer: str, tokens: Iterable[NumberToken]) -> str:

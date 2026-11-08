@@ -5,11 +5,19 @@ from decimal import Decimal
 
 import pytest
 
-from app.agent.validator import extract_numbers, numbers_in, strip_numbers, unsupported_numbers
+from app.agent.validator import (
+    extract_numbers,
+    numbers_in,
+    part_numbers_in,
+    strip_numbers,
+    unsupported_numbers,
+    unsupported_part_numbers,
+)
 
 RESULT = {
     "actuator": {
         "part_number": "763B00-11320000/A",
+        "alternatives": ["763C00-11330C00/A", "765Y30-11300000/A"],
         "motor_power_w": 1234,
         "service_ratings": [{"torque_inlb": 4321, "torque_nm": 488}],
         "electrical_ratings": [{"frequency_hz": 60, "fla_a": "2.30", "speed_s": 17}],
@@ -63,3 +71,28 @@ def test_strip_removes_number_with_its_unit() -> None:
     stripped = strip_numbers(answer, unsupported_numbers(answer, [RESULT]))
     assert stripped == "Da — y 488 Nm."
     assert unsupported_numbers(stripped, [RESULT]) == []
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        "El 763B00-11320000/A cumple.",
+        "Las opciones 763C y 765Y30-11300000/A.",  # a short name is the start of a returned one
+        "Revisa el 763b00 11320000 a.",  # case and separators do not matter
+        "La Serie 76 no tiene ese modelo.",
+    ],
+)
+def test_returned_part_numbers_pass(answer) -> None:
+    assert unsupported_part_numbers(answer, [RESULT]) == []
+
+
+def test_invented_part_numbers_are_reported_and_stripped() -> None:
+    answer = "Te sirve el 764B30-11320000/A o el 763A."
+    bad = unsupported_part_numbers(answer, [RESULT])
+    assert [t.text for t in bad] == ["764B30-11320000/A", "763A"]
+    assert strip_numbers(answer, bad) == "Te sirve el — o el —."
+
+
+def test_part_numbers_in_reads_nested_strings_and_queries() -> None:
+    found = part_numbers_in([{"status": "not_found", "query": "761a00-11380000/a"}, RESULT])
+    assert "761A0011380000A" in found and "763B0011320000A" in found
