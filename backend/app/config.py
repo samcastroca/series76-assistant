@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     agent_model: str | None = None
     fallback_model: str | None = None
     openrouter_api_key: SecretStr | None = None
-    llm_max_tokens: int = 600
+    llm_max_tokens: int = 1500  # output cap; reasoning models spend part of it (ADR 0005)
     llm_timeout_s: float = 60.0
     model_call_limit: int = 6  # model calls per turn
     tool_call_limit: int = 6  # tool calls per turn

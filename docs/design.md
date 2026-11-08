@@ -227,7 +227,7 @@ Decisión: no se usan embeddings ni pgvector. Los datos son 68 filas con campos 
 **Control del gasto:**
 
 - `LLM_PROVIDER=openrouter|google|fake`. El modo `fake` responde con un guion fijo y llama tools reales: sirve para tests y CI sin gastar.
-- `max_tokens` acotado (por ejemplo, 600) y temperatura 0.
+- `max_tokens` acotado (1500 por defecto, ver ADR 0005) y temperatura 0.
 - Historial limitado y resultados de tools compactos (solo los campos necesarios).
 - Registro de costo por mensaje en `llm_usage` y un tope diario configurable (`DAILY_BUDGET_USD`) que responde 503 al superarse.
 - Prompt caching del proveedor cuando esté disponible, con el system prompt estable al inicio.

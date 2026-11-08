@@ -1,0 +1,441 @@
+{
+  "date": "2026-11-07",
+  "api_url": "http://localhost:8000",
+  "llm_provider": "openrouter",
+  "agent_model": "anthropic/claude-sonnet-5.5",
+  "fallback_model": "z-ai/glm-5.3",
+  "selection": {
+    "fast": false,
+    "categories": null,
+    "ids": [
+      "comparison-wp_110v_1ph",
+      "multi-turn-search-then-compare",
+      "no-match-24v-modulating-ac",
+      "no-match-3ph-modulating",
+      "tolerance-230v"
+    ]
+  },
+  "summary": {
+    "cases": 5,
+    "cases_passed": 2,
+    "pass_rate": 0.4,
+    "turns": 6,
+    "metrics": {
+      "tool_selection": 1.0,
+      "argument_accuracy": 1.0,
+      "expected_part_numbers": 0.3333333333333333,
+      "response_type": 0.5,
+      "numeric_faithfulness": 1.0,
+      "coreference": 1.0
+    },
+    "latency_ms_p50": 6177,
+    "latency_ms_p95": 8703,
+    "cost_usd_per_turn": "0.022147",
+    "cost_usd_total": "0.132882",
+    "turns_with_cost": 6,
+    "tokens_per_turn": 8118.833333333333
+  },
+  "by_category": {
+    "comparison": {
+      "cases": 1,
+      "cases_passed": 0,
+      "pass_rate": 0.0,
+      "turns": 1,
+      "metrics": {
+        "tool_selection": 1.0,
+        "argument_accuracy": 1.0,
+        "expected_part_numbers": 0.0,
+        "response_type": 0.0,
+        "numeric_faithfulness": 1.0,
+        "coreference": null
+      },
+      "latency_ms_p50": 7610,
+      "latency_ms_p95": 7610,
+      "cost_usd_per_turn": "0.020284",
+      "cost_usd_total": "0.020284",
+      "turns_with_cost": 1,
+      "tokens_per_turn": 7282.0
+    },
+    "multi_turn": {
+      "cases": 1,
+      "cases_passed": 0,
+      "pass_rate": 0.0,
+      "turns": 2,
+      "metrics": {
+        "tool_selection": 1.0,
+        "argument_accuracy": 1.0,
+        "expected_part_numbers": 0.5,
+        "response_type": 0.5,
+        "numeric_faithfulness": 1.0,
+        "coreference": 1.0
+      },
+      "latency_ms_p50": 6391,
+      "latency_ms_p95": 8703,
+      "cost_usd_per_turn": "0.027292",
+      "cost_usd_total": "0.054584",
+      "turns_with_cost": 2,
+      "tokens_per_turn": 9856.0
+    },
+    "no_match": {
+      "cases": 2,
+      "cases_passed": 1,
+      "pass_rate": 0.5,
+      "turns": 2,
+      "metrics": {
+        "tool_selection": 1.0,
+        "argument_accuracy": 1.0,
+        "expected_part_numbers": null,
+        "response_type": 0.5,
+        "numeric_faithfulness": 1.0,
+        "coreference": null
+      },
+      "latency_ms_p50": 5372,
+      "latency_ms_p95": 6177,
+      "cost_usd_per_turn": "0.019524",
+      "cost_usd_total": "0.039048",
+      "turns_with_cost": 2,
+      "tokens_per_turn": 7288.0
+    },
+    "certification_tolerance": {
+      "cases": 1,
+      "cases_passed": 1,
+      "pass_rate": 1.0,
+      "turns": 1,
+      "metrics": {
+        "tool_selection": 1.0,
+        "argument_accuracy": 1.0,
+        "expected_part_numbers": null,
+        "response_type": 1.0,
+        "numeric_faithfulness": 1.0,
+        "coreference": null
+      },
+      "latency_ms_p50": 5185,
+      "latency_ms_p95": 5185,
+      "cost_usd_per_turn": "0.018966",
+      "cost_usd_total": "0.018966",
+      "turns_with_cost": 1,
+      "tokens_per_turn": 7143.0
+    }
+  },
+  "cases": [
+    {
+      "id": "comparison-wp_110v_1ph",
+      "category": "comparison",
+      "fast": true,
+      "passed": false,
+      "turns": [
+        {
+          "query": "Compara el 761A00-11300000/A con el 761B00-11300000/A",
+          "answer": "No pude completar esta consulta. Intenta reformularla. / I could not complete this request. Please rephrase it.",
+          "response_type": "error",
+          "products": [],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "761A00-11300000/A"
+              }
+            },
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "761B00-11300000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-sonnet-5.5",
+              "input_tokens": 2743,
+              "output_tokens": 115,
+              "cost_usd": "0.006636"
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5",
+              "input_tokens": 3824,
+              "output_tokens": 600,
+              "cost_usd": "0.013648"
+            }
+          ],
+          "internal_error": "empty_answer",
+          "latency_ms": 7610,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": false,
+            "response_type": false,
+            "numeric_faithfulness": true,
+            "coreference": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "multi-turn-search-then-compare",
+      "category": "multi_turn",
+      "fast": true,
+      "passed": false,
+      "turns": [
+        {
+          "query": "Busco un actuador a prueba de explosión, 220 V, modulante, de al menos 1600 Nm",
+          "answer": "Encontré dos actuadores a prueba de explosión, modulantes y de 220 V (monofásicos, AC) que cumplen con 1600 Nm o más:\n\n- **765X30-11320000/A**: 1600 Nm (14000 in·lb). Cumple justo el mínimo, sin margen. Ciclo de trabajo del 30 %. Tiempo de carrera de 112 s a 50 Hz.\n- **765Y30-11320000/A**: 2400 Nm (20720 in·lb), con 800 Nm de margen. Ciclo de trabajo del 30 %. Tiempo de carrera de 112 s a 50 Hz.\n\nAmbos tienen certificación CSA. No fue necesario aplicar tolerancia de voltaje, porque 220 V coincide con la tabla.\n\nLa velocidad y la corriente dependen de la frecuencia de la red. Los datos que muestro son a 50 Hz. Si usted trabaja a 60 Hz, dígamelo y lo verifico.\n\nSi espera picos de par o quiere un margen de seguridad, el 765Y30-11320000/A es la opción más segura. Si 1600 Nm es su requisito exacto, el 765X30-11320000/A lo cumple.",
+          "response_type": "recommendation",
+          "products": [
+            "765X30-11320000/A",
+            "765Y30-11320000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "search_actuators",
+              "args": {
+                "enclosure": "explosionproof",
+                "voltage_v": 220,
+                "min_torque": "1600",
+                "torque_unit": "nm",
+                "service_type": "modulating"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-sonnet-5.5",
+              "input_tokens": 2753,
+              "output_tokens": 157,
+              "cost_usd": "0.007076"
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5",
+              "input_tokens": 3438,
+              "output_tokens": 413,
+              "cost_usd": "0.011006"
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5",
+              "input_tokens": 3949,
+              "output_tokens": 556,
+              "cost_usd": "0.013458"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 8703,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": true,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null
+          }
+        },
+        {
+          "query": "Compara esos dos",
+          "answer": "No pude completar esta consulta. Intenta reformularla. / I could not complete this request. Please rephrase it.",
+          "response_type": "error",
+          "products": [],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "765X30-11320000/A"
+              }
+            },
+            {
+              "tool": "get_actuator",
+              "args": {
+                "part_number": "765Y30-11320000/A"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-sonnet-5.5",
+              "input_tokens": 3216,
+              "output_tokens": 169,
+              "cost_usd": "0.008122"
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5",
+              "input_tokens": 4461,
+              "output_tokens": 600,
+              "cost_usd": "0.014922"
+            }
+          ],
+          "internal_error": "empty_answer",
+          "latency_ms": 6391,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": false,
+            "response_type": false,
+            "numeric_faithfulness": true,
+            "coreference": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "no-match-24v-modulating-ac",
+      "category": "no_match",
+      "fast": false,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Necesito un actuador modulante de 24 VAC",
+          "answer": "No encontré ningún actuador modulante de 24 VAC en las tablas. A 24 V, los modulantes que aparecen son solo de corriente continua (DC).\n\n**Alternativas cercanas (no cumplen todos los requisitos):**\n- **761X30-11370000/A**: modulante, 24 V **DC** (no AC). Antiexplosión, 560 in·lb (65 N·m), 17 s, ciclo de trabajo del 30 %.\n- **761Y30-11370000/A**: modulante, 24 V **DC** (no AC). Antiexplosión, 630 in·lb (72 N·m), 20 s, ciclo de trabajo del 30 %.\n- **761X30-11380000/A** y **761Y30-11380000/A**: 24 V **AC/DC**, pero son **on/off**, no modulantes. Tienen 620 in·lb (70 N·m) y 700 in·lb (80 N·m).\n\nTodos son CSA y antiexplosión.\n\n**Para afinar la búsqueda, necesito saber:**\n1. ¿Puede usar una fuente de 24 VDC para el modulante?\n2. ¿Qué par necesita, en in·lb o N·m?\n3. ¿Qué envolvente necesita: weatherproof o explosionproof?",
+          "response_type": "no_match",
+          "products": [
+            "761X30-11380000/A",
+            "761X30-11370000/A",
+            "761X30-11300000/A",
+            "761Y30-11380000/A",
+            "761Y30-11370000/A"
+          ],
+          "warnings": [],
+          "tool_calls": [
+            {
+              "tool": "search_actuators",
+              "args": {
+                "voltage_v": 24,
+                "current_type": "AC",
+                "service_type": "modulating"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-sonnet-5.5",
+              "input_tokens": 2735,
+              "output_tokens": 102,
+              "cost_usd": "0.006490"
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5",
+              "input_tokens": 3933,
+              "output_tokens": 435,
+              "cost_usd": "0.012216"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 5372,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": null,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "no-match-3ph-modulating",
+      "category": "no_match",
+      "fast": true,
+      "passed": false,
+      "turns": [
+        {
+          "query": "Necesito un actuador modulante trifásico de 220 V",
+          "answer": "No pude completar esta consulta. Intenta reformularla. / I could not complete this request. Please rephrase it.",
+          "response_type": "error",
+          "products": [],
+          "warnings": [
+            "service_type_unspecified"
+          ],
+          "tool_calls": [
+            {
+              "tool": "search_actuators",
+              "args": {
+                "phase": 3,
+                "voltage_v": 220,
+                "service_type": "modulating"
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-sonnet-5.5",
+              "input_tokens": 2737,
+              "output_tokens": 100,
+              "cost_usd": "0.006474"
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5",
+              "input_tokens": 3934,
+              "output_tokens": 600,
+              "cost_usd": "0.013868"
+            }
+          ],
+          "internal_error": "empty_answer",
+          "latency_ms": 6177,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": null,
+            "response_type": false,
+            "numeric_faithfulness": true,
+            "coreference": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "tolerance-230v",
+      "category": "certification_tolerance",
+      "fast": true,
+      "passed": true,
+      "turns": [
+        {
+          "query": "Busco un actuador weatherproof para 230 V",
+          "answer": "Hay actuadores weatherproof para 230 V. Como el catálogo los publica a 220 V, se aplicó una tolerancia de tensión para cubrir su alimentación. Todos son monofásicos, de CA, con certificación CSA y ciclo de trabajo del 40 %. Las velocidades indicadas son a 50 Hz, y a 60 Hz pueden cambiar.\n\nEstas son las primeras opciones:\n\n| Referencia | Servicio | Par | Velocidad (50 Hz) |\n|---|---|---|---|\n| 761A00-11320000/A | Modulante | 580 in·lb (65 N·m) | 20 s |\n| 761A00-11320000/A | On/off | 700 in·lb (80 N·m) | 20 s |\n| 761B00-11320000/A | Modulante | 620 in·lb (70 N·m) | 23 s |\n| 761B00-11320000/A | On/off | 880 in·lb (100 N·m) | 23 s |\n| 762A00-11320000/A | Modulante | 1150 in·lb (130 N·m) | 21 s |\n\nEstos son solo los primeros resultados, y puede haber más opciones.\n\nPara acotar la selección necesito dos datos:\n1. **Tipo de servicio:** ¿on/off o modulante?\n2. **Par mínimo necesario**, en in·lb o N·m.\n\nTambién me sirve saber la frecuencia de la red (50 o 60 Hz) si la velocidad es importante.",
+          "response_type": "recommendation",
+          "products": [
+            "761A00-11320000/A",
+            "761B00-11320000/A",
+            "762A00-11320000/A"
+          ],
+          "warnings": [
+            "tolerance_applied"
+          ],
+          "tool_calls": [
+            {
+              "tool": "search_actuators",
+              "args": {
+                "enclosure": "weatherproof",
+                "voltage_v": 230
+              }
+            }
+          ],
+          "usage": [
+            {
+              "model": "anthropic/claude-sonnet-5.5",
+              "input_tokens": 2734,
+              "output_tokens": 81,
+              "cost_usd": "0.006278"
+            },
+            {
+              "model": "anthropic/claude-sonnet-5.5",
+              "input_tokens": 3824,
+              "output_tokens": 504,
+              "cost_usd": "0.012688"
+            }
+          ],
+          "internal_error": null,
+          "latency_ms": 5185,
+          "scores": {
+            "tool_selection": true,
+            "argument_accuracy": true,
+            "expected_part_numbers": null,
+            "response_type": true,
+            "numeric_faithfulness": true,
+            "coreference": null
+          }
+        }
+      ]
+    }
+  ],
+  "langsmith_experiment": "anthropic/claude-sonnet-5.5-cfd3cdc5"
+}

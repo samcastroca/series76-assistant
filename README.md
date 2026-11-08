@@ -88,7 +88,7 @@ hardcoded.
 | --- | --- | --- |
 | `LLM_PROVIDER` | `fake` | `fake` (scripted model, real tools, no cost), `google` (free manual checks, uses `GOOGLE_API_KEY`) or `openrouter` (final validation, uses `OPENROUTER_API_KEY`) |
 | `AGENT_MODEL` / `FALLBACK_MODEL` | none | Model IDs as the provider names them; required for `google`/`openrouter` |
-| `LLM_MAX_TOKENS` | `600` | Output cap per model call (temperature is always 0) |
+| `LLM_MAX_TOKENS` | `1500` | Output cap per model call (temperature is always 0) |
 | `LLM_TIMEOUT_S` | `60` | Provider request timeout |
 | `MODEL_CALL_LIMIT` / `TOOL_CALL_LIMIT` | `6` / `6` | Calls allowed per chat turn |
 | `HISTORY_TURNS` | `10` | Earlier turns sent to the model |
