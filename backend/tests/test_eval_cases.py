@@ -80,7 +80,7 @@ def test_missing_data_cases_use_rows_without_published_data() -> None:
         if c["category"] == "missing_data":
             (pn,) = c["expected"][0]["part_numbers"]
             assert rows[pn]["data_available"] is False
-            assert c["expected"][0]["must_not_contain_numbers"] is True
+            assert c["expected"][0]["must_not_contain_specs"] is True
 
 
 def test_csa_cases_use_rows_that_are_not_csa_certified() -> None:

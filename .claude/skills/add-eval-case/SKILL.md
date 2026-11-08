@@ -28,7 +28,7 @@ The eval dataset is how we prove the agent works on cases beyond our own example
       "part_numbers": [],
       "ordered": false,
       "coreference": false,
-      "must_not_contain_numbers": true
+      "must_not_contain_specs": true
     }
   ],
   "notes": "Example from the summary PDF; it does not exist in the data tables."
@@ -40,6 +40,8 @@ The eval dataset is how we prove the agent works on cases beyond our own example
 - `tools`: tools that must be called (repeat a name to require several calls); `[]` means no tool call; `null` means not checked.
 - `tool_args`: each entry must match a distinct call of that tool on the listed arguments (part numbers normalized, numbers compared by value).
 - `part_numbers` lists exactly the products in `products` (order-insensitive unless `ordered: true`); `null` means not checked (e.g. closest alternatives).
+- `alternatives` (optional): other accepted outcomes, each `{"response_type", "part_numbers"}`; the turn passes those two metrics if the primary or any alternative matches as a whole.
+- `must_not_contain_specs: true` (not found, no published data): no number with a spec unit (in-lb, Nm, s, A, W, %) may appear; voltages, frequencies and sizes are allowed.
 - `coreference: true` on a follow-up turn whose tool arguments must target the product from earlier turns.
 - `fast` is not set in `cases_manual.jsonl`: the ~20 cases used by `make eval-fast` are listed in `FAST_IDS` in `generate_cases.py`, which must name exactly 20.
 

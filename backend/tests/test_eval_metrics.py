@@ -90,11 +90,37 @@ def test_numeric_faithfulness_fails_when_the_validator_stripped_numbers() -> Non
     assert metrics.numeric_faithfulness(expected(), stripped, []) is False
 
 
-def test_must_not_contain_numbers_allows_only_the_allowlist() -> None:
-    exp = expected(must_not_contain_numbers=True)
-    results = [{"torque_inlb": TORQUE}]
-    assert metrics.numeric_faithfulness(exp, response(answer="Size 3, 60 Hz."), results)
-    assert not metrics.numeric_faithfulness(exp, response(answer=f"{TORQUE} in-lb"), results)
+def test_must_not_contain_specs_rejects_numbers_with_spec_units() -> None:
+    exp = expected(must_not_contain_specs=True)
+    results = [{"torque_inlb": TORQUE, "speed_s": 17, "fla_a": "1.2"}]
+    for spec in (f"{TORQUE} in-lb", f"{TORQUE} in·lb", "17 s", "1,2 A"):
+        assert not metrics.numeric_faithfulness(exp, response(answer=f"It has {spec}."), results)
+
+
+def test_must_not_contain_specs_allows_identifying_numbers() -> None:
+    """Regression (paid run 2026-11-07): not_found / no_data answers that list suggestions
+    or the row's supply ("220 V, 3-phase", "Series size: 2") are not leaking specs."""
+    supply = ROW["voltage_v"]
+    exp = expected(must_not_contain_specs=True)
+    results = [{"voltage_v": supply, "phase": 3, "series_size": 2}]
+    answer = f"Not published. Supply: {supply} V, 3-phase, 60 Hz. Series size: 2."
+    assert metrics.numeric_faithfulness(exp, response(answer=answer), results)
+
+
+def test_alternatives_accept_another_whole_outcome() -> None:
+    other = "OTHER"
+    exp = expected(alternatives=[{"response_type": "comparison", "part_numbers": [PN, other]}])
+    scores = metrics.score_turn(
+        exp, response(response_type="comparison", parts=(other, PN)), [call(part_number=PN)], []
+    )
+    assert scores["response_type"] and scores["expected_part_numbers"]
+
+
+def test_alternatives_must_match_type_and_parts_together() -> None:
+    exp = expected(alternatives=[{"response_type": "comparison", "part_numbers": [PN, "OTHER"]}])
+    mixed = response(response_type="comparison", parts=(PN,))  # alt type, primary parts
+    scores = metrics.score_turn(exp, mixed, [call(part_number=PN)], [])
+    assert not metrics.passed(scores)
 
 
 def test_coreference_only_applies_to_flagged_turns() -> None:
@@ -221,6 +247,7 @@ def test_run_case_scores_turns_and_cleans_up() -> None:
     with httpx.Client(base_url="http://t", transport=httpx.MockTransport(handler)) as client:
         result = run_eval.run_case(client, case)
     assert result["passed"] is True
+    assert result["turns"][0]["internal_error"] is None
     assert deleted == ["/api/sessions/s1"]
 
 

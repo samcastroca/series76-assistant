@@ -180,17 +180,21 @@ def turn(
     part_numbers: list[str] | None,
     tool_args: list[dict[str, Any]] | None = None,
     coreference: bool = False,
-    must_not_contain_numbers: bool = False,
+    must_not_contain_specs: bool = False,
+    alternatives: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    return {
+    out = {
         "tools": tools,
         "tool_args": tool_args or [],
         "response_type": response_type,
         "part_numbers": part_numbers,
         "ordered": False,
         "coreference": coreference,
-        "must_not_contain_numbers": must_not_contain_numbers,
+        "must_not_contain_specs": must_not_contain_specs,
     }
+    if alternatives:
+        out["alternatives"] = alternatives  # other accepted {response_type, part_numbers}
+    return out
 
 
 def case(
@@ -251,7 +255,7 @@ def missing_data_cases(catalog: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     "no_data",
                     [a["part_number"]],
                     [lookup(a["part_number"])],
-                    must_not_contain_numbers=True,
+                    must_not_contain_specs=True,
                 )
             ],
             "N/A row in the data PDF: the part exists but no specs are published.",
@@ -470,10 +474,18 @@ def multi_turn_cases(catalog: list[dict[str, Any]]) -> list[dict[str, Any]]:
             [f"Dame los datos del {pa}", f"¿Y el modelo {sibling['variant']} del mismo tamaño?"],
             [
                 turn(["get_actuator"], "detail", [pa], [lookup(pa)]),
-                turn(["get_actuator"], "detail", [pb], [lookup(pb)], coreference=True),
+                turn(
+                    ["get_actuator"],
+                    "detail",
+                    [pb],
+                    [lookup(pb)],
+                    coreference=True,
+                    alternatives=[{"response_type": "comparison", "part_numbers": [pa, pb]}],
+                ),
             ],
             "The follow-up names a variant; the agent must build the sibling part number from "
-            "the active one (same size and supply).",
+            "the active one (same size and supply). Showing it alone or compared with the "
+            "previous one are both accepted.",
         )
     )
 
@@ -543,7 +555,8 @@ def validate(cases: list[dict[str, Any]], catalog: list[dict[str, Any]]) -> None
         for e in c["expected"]:
             if e["response_type"] not in RESPONSE_TYPES:
                 raise ValueError(f"{c['id']}: unknown response_type {e['response_type']!r}")
-            if unknown := set(e.get("part_numbers") or []) - known:
+            listed = [e, *e.get("alternatives", [])]
+            if unknown := {p for x in listed for p in x.get("part_numbers") or []} - known:
                 raise ValueError(f"{c['id']}: part numbers not in the catalog: {sorted(unknown)}")
     missing = set(FAST_IDS) - set(ids)
     if missing or len(FAST_IDS) != FAST_COUNT:

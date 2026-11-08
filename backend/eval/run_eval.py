@@ -143,6 +143,8 @@ def run_case(client: httpx.Client, case: dict[str, Any]) -> dict[str, Any]:
                 "warnings": response.get("warnings", []),
                 "tool_calls": [{"tool": c["tool_name"], "args": c["args"]} for c in calls],
                 "usage": trace.get("usage", []),
+                # Why the backend answered with its fallback (call limit, empty answer).
+                "internal_error": trace.get("payload", {}).get("internal_error"),
                 "latency_ms": latency_ms,
                 "scores": metrics.score_turn(expected, response, calls, session_results),
             }

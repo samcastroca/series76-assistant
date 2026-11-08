@@ -4,13 +4,20 @@ response and the debug trace; no network, no LLM.
 A metric is True (passed), False (failed) or None (not applicable to this turn)."""
 
 import math
+import re
 from collections import Counter
 from collections.abc import Iterable, Sequence
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from app.agent.validator import ALLOWLIST, extract_numbers, unsupported_numbers
+from app.agent.validator import extract_numbers, unsupported_numbers
 from app.tools.normalize import normalize_part_key
+
+# Units of spec values (torque, stroke time, current, power, duty cycle). Voltages, frequencies
+# and series sizes identify a product and may appear even when no specs are published.
+_SPEC_UNIT = re.compile(
+    r"^(?:in-lb|lb-in|in·lb|N·m|Nm|A|W|s|%|seg(?:undos)?|seconds?)$", re.IGNORECASE
+)
 
 METRICS = (
     "tool_selection",
@@ -96,20 +103,43 @@ def response_type(expected: dict[str, Any], response: dict[str, Any]) -> bool:
     return response.get("response_type") == expected["response_type"]
 
 
+def outcome(expected: dict[str, Any], response: dict[str, Any]) -> tuple[bool | None, bool]:
+    """(expected_part_numbers, response_type) against the expected outcome or, when it fails,
+    any accepted alternative ({response_type, part_numbers, ordered?}) matched as a whole."""
+    primary = (expected_part_numbers(expected, response), response_type(expected, response))
+    if primary[0] is not False and primary[1]:
+        return primary
+    for alt in expected.get("alternatives") or []:
+        candidate = (expected_part_numbers(alt, response), response_type(alt, response))
+        if candidate[0] is not False and candidate[1]:
+            return candidate
+    return primary
+
+
 def numeric_faithfulness(
     expected: dict[str, Any], response: dict[str, Any], session_results: Iterable[Any]
 ) -> bool:
     """Every number in the answer is backed by a tool result of the session (or the allowlist),
     and the backend's validator did not have to strip any (`numbers_removed`). With
-    must_not_contain_numbers, only allowlisted numbers may appear."""
+    must_not_contain_specs (not found, no published data), no number may carry a spec unit."""
     answer = response.get("answer", "")
     if unsupported_numbers(answer, list(session_results)):
         return False
     if "numbers_removed" in response.get("warnings", []):
         return False
-    if expected.get("must_not_contain_numbers"):
-        return all(t.readings & ALLOWLIST for t in extract_numbers(answer))
+    if expected.get("must_not_contain_specs"):
+        return not spec_values(answer)
     return True
+
+
+def spec_values(answer: str) -> list[str]:
+    """Numbers printed with a spec unit ("700 in-lb", "17 s", "1,2 A")."""
+    out = []
+    for t in extract_numbers(answer):
+        unit = answer[t.start + len(t.text) : t.end].strip()
+        if _SPEC_UNIT.match(unit):
+            out.append(answer[t.start : t.end])
+    return out
 
 
 def score_turn(
@@ -123,11 +153,12 @@ def score_turn(
     coreference = None
     if expected.get("coreference"):
         coreference = selection is not False and arguments is not False
+    parts, kind = outcome(expected, response)
     return {
         "tool_selection": selection,
         "argument_accuracy": arguments,
-        "expected_part_numbers": expected_part_numbers(expected, response),
-        "response_type": response_type(expected, response),
+        "expected_part_numbers": parts,
+        "response_type": kind,
         "numeric_faithfulness": numeric_faithfulness(expected, response, session_results),
         "coreference": coreference,
     }
