@@ -90,6 +90,7 @@ class _TurnStopped(Exception):
 
 @dataclass
 class _Loaded:
+    user_id: uuid.UUID
     session_id: uuid.UUID
     is_new: bool
     title: str
@@ -109,8 +110,10 @@ class ConversationService:
         self.sessionmaker = sessionmaker
         self.settings = settings
 
-    async def handle(self, session_id: uuid.UUID | None, query: str) -> ConversationResponse:
-        loaded = await self._load(session_id, query)
+    async def handle(
+        self, user_id: uuid.UUID, session_id: uuid.UUID | None, query: str
+    ) -> ConversationResponse:
+        loaded = await self._load(user_id, session_id, query)
         await self._check_budget()
         ctx = AgentContext(
             sessionmaker=self.sessionmaker,
@@ -148,15 +151,16 @@ class ConversationService:
 
     # --- Read and write phases (no connection is held while the model runs) ----------------
 
-    async def _load(self, session_id: uuid.UUID | None, query: str) -> _Loaded:
+    async def _load(self, user_id: uuid.UUID, session_id: uuid.UUID | None, query: str) -> _Loaded:
         if session_id is None:  # created in the write transaction, with the first turn
-            return _Loaded(uuid.uuid4(), True, make_title(query), {})
+            return _Loaded(user_id, uuid.uuid4(), True, make_title(query), {})
         async with self.sessionmaker() as db:
-            session = await repo.get_session(db, session_id)
-            if session is None:
+            session = await repo.get_session(db, session_id, user_id)
+            if session is None:  # missing or another user's: the same 404
                 raise SessionNotFound("Conversation not found.")
             rows = await repo.recent_messages(db, session.id, self.settings.history_turns)
             return _Loaded(
+                user_id,
                 session.id,
                 False,
                 session.title,
@@ -189,7 +193,7 @@ class ConversationService:
             payload["internal_error"] = internal_error  # trace only, never in the chat
         async with self.sessionmaker() as db:
             if loaded.is_new:
-                await repo.create_session(db, loaded.title, loaded.session_id)
+                await repo.create_session(db, loaded.user_id, loaded.title, loaded.session_id)
                 await repo.add_message(db, loaded.session_id, "user", query)
             elif not await repo.reuse_failed_user_message(db, loaded.session_id, query):
                 await repo.add_message(db, loaded.session_id, "user", query)

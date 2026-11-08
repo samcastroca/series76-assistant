@@ -1,9 +1,13 @@
-"""Settings: a real provider needs a model and its key; fake needs neither. No model ID in code."""
+"""Settings: a real provider needs a model and its key; fake needs neither. No model ID in code.
+The app refuses to start without a strong enough JWT_SECRET."""
 
 import pytest
 from pydantic import ValidationError
 
+from app.agent.fake import ScriptedFakeModel
 from app.config import Settings
+from app.main import create_app
+from app.security import MIN_SECRET_LENGTH
 
 
 def test_fake_is_the_default_and_needs_no_model() -> None:
@@ -35,3 +39,15 @@ def test_real_provider_requires_its_key(provider, key_name, monkeypatch) -> None
         monkeypatch.delenv(name, raising=False)
     with pytest.raises(ValidationError, match=key_name):
         Settings(llm_provider=provider, agent_model="some/model")
+
+
+@pytest.mark.parametrize("secret", [None, "", "x" * (MIN_SECRET_LENGTH - 1)])
+def test_app_refuses_a_missing_or_short_jwt_secret(secret) -> None:
+    settings = Settings(_env_file=None, jwt_secret=secret)
+    with pytest.raises(ValueError, match="JWT_SECRET"):
+        create_app(settings, ScriptedFakeModel(steps=[]))
+
+
+def test_blank_seed_passwords_and_jwt_secret_count_as_unset() -> None:
+    s = Settings(_env_file=None, jwt_secret="", seed_developer_password="")
+    assert s.jwt_secret is None and s.seed_developer_password is None

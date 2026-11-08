@@ -1,5 +1,8 @@
 """Conversation repository: parameterized reads and writes of sessions, messages, tool calls and
-LLM usage. Functions never commit; the conversation service owns the transaction."""
+LLM usage. Functions never commit; the conversation service owns the transaction.
+
+Session reads and deletes take the owner's user_id: another user's session behaves exactly like
+a missing one."""
 
 import uuid
 from collections.abc import Sequence
@@ -19,17 +22,20 @@ _CHRONOLOGICAL = (Message.created_at, Message.role.desc())
 
 
 async def create_session(
-    db: AsyncSession, title: str, session_id: uuid.UUID | None = None
+    db: AsyncSession, user_id: uuid.UUID, title: str, session_id: uuid.UUID | None = None
 ) -> ChatSession:
-    session = ChatSession(id=session_id or uuid.uuid4(), title=title, state={})
+    session = ChatSession(id=session_id or uuid.uuid4(), user_id=user_id, title=title, state={})
     db.add(session)
     await db.flush()
     await db.refresh(session)
     return session
 
 
-async def get_session(db: AsyncSession, session_id: uuid.UUID) -> ChatSession | None:
-    return await db.get(ChatSession, session_id)
+async def get_session(
+    db: AsyncSession, session_id: uuid.UUID, user_id: uuid.UUID
+) -> ChatSession | None:
+    stmt = select(ChatSession).where(ChatSession.id == session_id, ChatSession.user_id == user_id)
+    return await db.scalar(stmt)
 
 
 @dataclass(frozen=True)
@@ -38,18 +44,21 @@ class SessionRow:
     message_count: int
 
 
-async def list_sessions(db: AsyncSession) -> list[SessionRow]:
+async def list_sessions(db: AsyncSession, user_id: uuid.UUID) -> list[SessionRow]:
     stmt = (
         select(ChatSession, func.count(Message.id))
         .outerjoin(Message, Message.session_id == ChatSession.id)
+        .where(ChatSession.user_id == user_id)
         .group_by(ChatSession.id)
         .order_by(ChatSession.updated_at.desc(), ChatSession.id)
     )
     return [SessionRow(s, n) for s, n in (await db.execute(stmt)).all()]
 
 
-async def delete_session(db: AsyncSession, session_id: uuid.UUID) -> bool:
-    result = await db.execute(delete(ChatSession).where(ChatSession.id == session_id))
+async def delete_session(db: AsyncSession, session_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+    result = await db.execute(
+        delete(ChatSession).where(ChatSession.id == session_id, ChatSession.user_id == user_id)
+    )
     return result.rowcount > 0
 
 

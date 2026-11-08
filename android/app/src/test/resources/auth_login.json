@@ -1,0 +1,8 @@
+{
+  "access_token": "<access-token>",
+  "token_type": "bearer",
+  "user": {
+    "email": "engineer@example.com",
+    "role": "engineer"
+  }
+}

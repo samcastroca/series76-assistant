@@ -1,5 +1,5 @@
-"""The Alembic migrations build the catalog and conversation schema on a throwaway database and
-tear it down."""
+"""The Alembic migrations build the catalog, user and conversation schema on a throwaway
+database and tear it down."""
 
 import asyncio
 
@@ -28,6 +28,7 @@ def test_upgrade_creates_all_tables_and_downgrade_removes_them(db_url) -> None:
         "service_ratings",
         "sessions",
         "tool_calls",
+        "users",
     ]
     ext = asyncio.run(fetch(db_url, "SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm'"))
     assert ext
@@ -71,3 +72,32 @@ def test_phase_is_null_exactly_on_24v(db_url) -> None:
         asyncio.run(execute(db_url, ACTUATOR.format(voltage=24, phase=1)))
     with pytest.raises(asyncpg.CheckViolationError):
         asyncio.run(execute(db_url, ACTUATOR.format(voltage=110, phase="NULL")))
+
+
+def test_0003_deletes_ownerless_sessions_and_requires_an_owner(db_url) -> None:
+    cfg = alembic_config(db_url)
+    command.upgrade(cfg, "0002")
+    asyncio.run(execute(db_url, "INSERT INTO sessions (id, title) VALUES (gen_random_uuid(), 't')"))
+    command.upgrade(cfg, "0003")
+
+    assert asyncio.run(fetch(db_url, "SELECT 1 FROM sessions")) == []
+    with pytest.raises(asyncpg.NotNullViolationError):
+        asyncio.run(
+            execute(db_url, "INSERT INTO sessions (id, title) VALUES (gen_random_uuid(), 't')")
+        )
+
+    command.downgrade(cfg, "0002")
+    asyncio.run(execute(db_url, "INSERT INTO sessions (id, title) VALUES (gen_random_uuid(), 't')"))
+
+
+def test_user_role_is_engineer_or_developer(db_url) -> None:
+    command.upgrade(alembic_config(db_url), "head")
+    insert = (
+        "INSERT INTO users (id, email, password_hash, role) "
+        "VALUES (gen_random_uuid(), 'a@example.com', 'h', '{role}')"
+    )
+    with pytest.raises(asyncpg.CheckViolationError):
+        asyncio.run(execute(db_url, insert.format(role="admin")))
+    asyncio.run(execute(db_url, insert.format(role="engineer")))
+    with pytest.raises(asyncpg.UniqueViolationError):
+        asyncio.run(execute(db_url, insert.format(role="developer")))

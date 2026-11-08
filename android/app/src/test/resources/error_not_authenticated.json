@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": "not_authenticated",
+    "message": "Sign in to continue."
+  }
+}

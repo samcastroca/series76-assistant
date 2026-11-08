@@ -1,19 +1,14 @@
 """API tests with LLM_PROVIDER=fake (a scripted LangChain model) against Postgres: the response
-contract, multi-turn follow-up, persistence across an app restart, sessions, the debug trace and
-the single error shape. Catalog values come from catalog.json."""
+contract, multi-turn follow-up, persistence across an app restart, sessions, the trace and the
+single error shape. Requests run as engineer1 unless a test says otherwise; authentication and
+ownership have their own module (test_auth_api.py). Catalog values come from catalog.json."""
 
-from collections.abc import AsyncIterator, Callable
-from contextlib import AbstractAsyncContextManager, asynccontextmanager
-
-import httpx
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
-from app.agent.fake import ScriptedFakeModel, calls, tool_call
-from app.config import Settings
-from app.db.engine import make_engine
-from app.main import create_app
+from app.agent.fake import calls, tool_call
 from ingest.load import read_catalog
+from tests._api import INTERNALS, assert_error
 
 pytestmark = pytest.mark.db
 
@@ -51,50 +46,10 @@ PRODUCT_KEYS = {
     "meets_requirements",
     "unmet",
 }
-INTERNALS = ("get_actuator", "search_actuators", "list_catalog_options", "Traceback", "SELECT")
-
-Client = Callable[..., AbstractAsyncContextManager[httpx.AsyncClient]]
-
-
-@pytest.fixture
-async def client(catalog_db_url: str) -> AsyncIterator[Client]:
-    engine = make_engine(catalog_db_url)
-    async with engine.begin() as conn:
-        await conn.exec_driver_sql("TRUNCATE sessions CASCADE")
-    await engine.dispose()
-
-    @asynccontextmanager
-    async def start(steps: list, **overrides) -> AsyncIterator[httpx.AsyncClient]:
-        """A fresh app instance (new engine, agent and service), like a process start."""
-        settings = Settings(
-            _env_file=None,
-            database_url=catalog_db_url,
-            llm_provider="fake",  # independent of the developer's shell
-            agent_model=None,
-            fallback_model=None,
-            model_call_limit=4,
-            tool_call_limit=4,
-            **overrides,
-        )
-        app = create_app(settings, ScriptedFakeModel(steps=steps))
-        transport = httpx.ASGITransport(app=app, raise_app_exceptions=False)
-        async with app.router.lifespan_context(app):
-            async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
-                yield c
-
-    yield start
 
 
 def lookup(pn: str = PN) -> AIMessage:
     return calls(tool_call("get_actuator", part_number=pn))
-
-
-def assert_error(response: httpx.Response, status: int, code: str) -> None:
-    assert response.status_code == status
-    body = response.json()
-    assert set(body) == {"error"} and set(body["error"]) == {"code", "message"}
-    assert body["error"]["code"] == code
-    assert not any(word in body["error"]["message"] for word in INTERNALS)
 
 
 # --- Contract ---------------------------------------------------------------------------------
@@ -197,8 +152,8 @@ async def test_sessions_list_messages_and_delete(client) -> None:
     assert_error(again, 404, "session_not_found")
 
 
-async def test_trace_shows_tool_calls_and_usage_in_debug_mode(client) -> None:
-    async with client([lookup(), AIMessage("Listo.")], debug_api=True) as c:
+async def test_trace_shows_tool_calls_and_usage_to_a_developer(client) -> None:
+    async with client([lookup(), AIMessage("Listo.")], as_user="developer") as c:
         mid = (await c.post("/api/conversation", json={"query": "q"})).json()["message_id"]
         trace = (await c.get(f"/api/messages/{mid}/trace")).json()
 
@@ -210,16 +165,16 @@ async def test_trace_shows_tool_calls_and_usage_in_debug_mode(client) -> None:
     assert trace["message_id"] == mid
 
 
-async def test_trace_is_hidden_without_debug_mode(client) -> None:
+async def test_trace_is_forbidden_to_an_engineer(client) -> None:
     async with client([lookup(), AIMessage("Listo.")]) as c:
         mid = (await c.post("/api/conversation", json={"query": "q"})).json()["message_id"]
         r = await c.get(f"/api/messages/{mid}/trace")
-    assert_error(r, 404, "not_found")
+    assert_error(r, 403, "forbidden")
 
 
 async def test_call_limit_error_detail_stays_out_of_messages(client) -> None:
     loop = [calls(tool_call("list_catalog_options", field="enclosure")) for _ in range(10)]
-    async with client(loop, debug_api=True) as c:
+    async with client(loop, as_user="developer") as c:
         body = (await c.post("/api/conversation", json={"query": "q"})).json()
         messages = (await c.get(f"/api/sessions/{body['session_id']}/messages")).json()
         trace = (await c.get(f"/api/messages/{body['message_id']}/trace")).json()
@@ -310,7 +265,7 @@ async def test_query_at_the_limit_is_accepted_after_strip(client) -> None:
 
 
 async def test_malformed_requests_use_the_shape(client) -> None:
-    async with client([], debug_api=True) as c:
+    async with client([], as_user="developer") as c:
         malformed = await c.post(
             "/api/conversation",
             content=b"{not json",
@@ -324,10 +279,13 @@ async def test_malformed_requests_use_the_shape(client) -> None:
         assert_error(await c.get(f"/api/messages/{unknown}/trace"), 404, "message_not_found")
 
 
-async def test_trace_route_is_absent_from_docs_without_debug(client) -> None:
-    async with client([]) as c:
+async def test_trace_route_is_documented_and_requires_a_token(client) -> None:
+    async with client([], as_user=None) as c:
         paths = (await c.get("/openapi.json")).json()["paths"]
-    assert not any("trace" in p for p in paths)
+        unknown = "00000000-0000-4000-8000-000000000000"
+        r = await c.get(f"/api/messages/{unknown}/trace")
+    assert "/api/messages/{message_id}/trace" in paths
+    assert_error(r, 401, "not_authenticated")
 
 
 async def test_unknown_route_and_unexpected_errors_use_the_shape(client, monkeypatch) -> None:

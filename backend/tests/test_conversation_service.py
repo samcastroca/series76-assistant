@@ -1,5 +1,6 @@
 """ConversationService with scripted fake models against Postgres: one-transaction persistence,
-provider failure, the numeric validator's retry and strip, call limits and multi-turn context.
+provider failure, the numeric validator's retry and strip, call limits, multi-turn context and
+session ownership.
 Catalog values in answers are taken from catalog.json."""
 
 import uuid
@@ -35,6 +36,10 @@ PN, POWER = ROW.part_number, ROW.motor_power_w
 UNBACKED = 987_654  # invented; not a catalog value
 SETTINGS = Settings(_env_file=None, model_call_limit=4, tool_call_limit=4)
 
+# The turn's user; inserted by the fixture (the hash is never verified here).
+USER = uuid.UUID("00000000-0000-0000-0000-0000000000e1")
+OTHER = uuid.UUID("00000000-0000-0000-0000-0000000000e2")
+
 ServiceFactory = Callable[[list], ConversationService]
 
 
@@ -42,7 +47,12 @@ ServiceFactory = Callable[[list], ConversationService]
 async def make_service(catalog_db_url: str) -> AsyncIterator[ServiceFactory]:
     engine = make_engine(catalog_db_url)
     async with engine.begin() as conn:
-        await conn.exec_driver_sql("TRUNCATE sessions CASCADE")
+        await conn.exec_driver_sql("TRUNCATE users, sessions CASCADE")
+        await conn.exec_driver_sql(
+            "INSERT INTO users (id, email, password_hash, role) VALUES "
+            f"('{USER}', 'user@example.com', 'x', 'engineer'), "
+            f"('{OTHER}', 'other@example.com', 'x', 'engineer')"
+        )
     maker = make_sessionmaker(engine)
 
     def factory(steps: list) -> ConversationService:
@@ -69,7 +79,7 @@ async def _count(maker, model, **where) -> int:
 
 async def test_turn_is_persisted_with_trace_and_usage(make_service) -> None:
     service = make_service([lookup(), AIMessage(f"El {PN} consume {POWER} W.")])
-    response = await service.handle(None, f"datos del {PN}")
+    response = await service.handle(USER, None, f"datos del {PN}")
 
     assert response.response_type == "detail"
     assert response.answer == f"El {PN} consume {POWER} W."
@@ -82,7 +92,7 @@ async def test_turn_is_persisted_with_trace_and_usage(make_service) -> None:
         assert messages[1].id == response.message_id
         assert messages[1].payload["products"][0]["part_number"] == PN
         trace = await repo.get_trace(db, response.message_id)
-        session = await repo.get_session(db, response.session_id)
+        session = await repo.get_session(db, response.session_id, USER)
     (call,) = trace.tool_calls
     assert call.tool_name == "get_actuator" and call.args == {"part_number": PN}
     assert call.result["actuator"]["motor_power_w"] == POWER
@@ -96,7 +106,7 @@ async def test_turn_is_persisted_with_trace_and_usage(make_service) -> None:
 async def test_provider_failure_on_a_new_session_stores_nothing(make_service) -> None:
     service = make_service([ConnectionError("provider down")])
     with pytest.raises(LlmUnavailable):
-        await service.handle(None, "hola")
+        await service.handle(USER, None, "hola")
 
     maker = make_service.maker  # the 503 cannot return a session id, so no orphan session
     assert await _count(maker, Message) == 0
@@ -105,9 +115,9 @@ async def test_provider_failure_on_a_new_session_stores_nothing(make_service) ->
 
 async def test_provider_failure_keeps_the_user_message_and_its_trace(make_service) -> None:
     service = make_service([lookup(), AIMessage("Listo."), lookup(), ConnectionError("down")])
-    first = await service.handle(None, "q")
+    first = await service.handle(USER, None, "q")
     with pytest.raises(LlmUnavailable):
-        await service.handle(first.session_id, "otra")
+        await service.handle(USER, first.session_id, "otra")
 
     maker = make_service.maker
     async with maker() as db:
@@ -126,10 +136,10 @@ async def test_provider_failure_keeps_the_user_message_and_its_trace(make_servic
 async def test_retry_after_failure_reuses_the_failed_user_message(make_service) -> None:
     script = [lookup(), AIMessage("Listo."), lookup(), ConnectionError("down")]
     service = make_service([*script, lookup(), AIMessage("Ahora sí.")])
-    first = await service.handle(None, "q")
+    first = await service.handle(USER, None, "q")
     with pytest.raises(LlmUnavailable):
-        await service.handle(first.session_id, "otra")
-    retried = await service.handle(first.session_id, "otra")
+        await service.handle(USER, first.session_id, "otra")
+    retried = await service.handle(USER, first.session_id, "otra")
 
     async with make_service.maker() as db:
         messages = await repo.list_messages(db, first.session_id)
@@ -148,10 +158,10 @@ async def test_retry_after_failure_reuses_the_failed_user_message(make_service) 
 async def test_a_different_query_after_failure_keeps_the_failed_message(make_service) -> None:
     script = [lookup(), AIMessage("Listo."), ConnectionError("down"), AIMessage("Otra cosa.")]
     service = make_service(script)
-    first = await service.handle(None, "q")
+    first = await service.handle(USER, None, "q")
     with pytest.raises(LlmUnavailable):
-        await service.handle(first.session_id, "otra")
-    await service.handle(first.session_id, "distinta")
+        await service.handle(USER, first.session_id, "otra")
+    await service.handle(USER, first.session_id, "distinta")
 
     async with make_service.maker() as db:
         messages = await repo.list_messages(db, first.session_id)
@@ -170,7 +180,7 @@ async def test_unbacked_number_triggers_one_retry_with_a_note(make_service) -> N
         return AIMessage(f"Consume {POWER} W.")
 
     service = make_service([lookup(), AIMessage(f"Consume {UNBACKED} W."), corrected])
-    response = await service.handle(None, "q")
+    response = await service.handle(USER, None, "q")
 
     assert response.answer == f"Consume {POWER} W."
     assert response.warnings == []
@@ -183,7 +193,7 @@ async def test_unbacked_number_triggers_one_retry_with_a_note(make_service) -> N
 async def test_numbers_are_stripped_after_a_failed_retry(make_service) -> None:
     bad = AIMessage(f"Consume {UNBACKED} W y {POWER} W.")
     service = make_service([lookup(), bad, bad])
-    response = await service.handle(None, "q")
+    response = await service.handle(USER, None, "q")
 
     assert str(UNBACKED) not in response.answer.replace(",", "")
     assert str(POWER) in response.answer  # backed numbers stay
@@ -193,14 +203,14 @@ async def test_numbers_are_stripped_after_a_failed_retry(make_service) -> None:
 
 async def test_tool_names_in_the_answer_are_retried(make_service) -> None:
     service = make_service([lookup(), AIMessage("Usé get_actuator."), AIMessage("Aquí está.")])
-    response = await service.handle(None, "q")
+    response = await service.handle(USER, None, "q")
     assert response.answer == "Aquí está."
 
 
 async def test_call_limit_returns_a_controlled_error(make_service) -> None:
     loop = [calls(tool_call("list_catalog_options", field="enclosure")) for _ in range(10)]
     service = make_service(loop)
-    response = await service.handle(None, "q")
+    response = await service.handle(USER, None, "q")
 
     assert response.response_type == "error"
     assert response.answer == FALLBACK_ANSWER
@@ -223,8 +233,8 @@ async def test_follow_up_resolves_the_active_part_number(make_service) -> None:
     service = make_service(
         [lookup(), AIMessage("Listo."), follow_up, AIMessage(f"Consume {POWER} W.")]
     )
-    first = await service.handle(None, f"datos del {PN}")
-    second = await service.handle(first.session_id, "¿y cuánta potencia consume?")
+    first = await service.handle(USER, None, f"datos del {PN}")
+    second = await service.handle(USER, first.session_id, "¿y cuánta potencia consume?")
 
     assert second.session_id == first.session_id
     assert second.response_type == "detail"
@@ -234,21 +244,29 @@ async def test_follow_up_resolves_the_active_part_number(make_service) -> None:
 
 async def test_numbers_from_earlier_turns_are_accepted(make_service) -> None:
     service = make_service([lookup(), AIMessage("Listo."), AIMessage(f"Eran {POWER} W.")])
-    first = await service.handle(None, f"datos del {PN}")
-    second = await service.handle(first.session_id, "¿cuánto era?")
+    first = await service.handle(USER, None, f"datos del {PN}")
+    second = await service.handle(USER, first.session_id, "¿cuánto era?")
     assert second.answer == f"Eran {POWER} W."
     assert second.warnings == []
 
 
 async def test_unknown_session_is_rejected(make_service) -> None:
     with pytest.raises(SessionNotFound):
-        await make_service([]).handle(uuid.uuid4(), "q")
+        await make_service([]).handle(USER, uuid.uuid4(), "q")
+
+
+async def test_another_users_session_is_not_found(make_service) -> None:
+    service = make_service([lookup(), AIMessage("Listo."), lookup(), AIMessage("Listo.")])
+    first = await service.handle(USER, None, f"datos del {PN}")
+    with pytest.raises(SessionNotFound):
+        await service.handle(OTHER, first.session_id, "¿y la potencia?")
+    assert await _count(make_service.maker, Message) == 2  # nothing stored for OTHER
 
 
 async def test_retry_shares_the_turn_call_budget(make_service) -> None:
     loop = [calls(tool_call("list_catalog_options", field="enclosure")) for _ in range(10)]
     service = make_service([lookup(), AIMessage(f"Consume {UNBACKED} W."), *loop])
-    response = await service.handle(None, "q")
+    response = await service.handle(USER, None, "q")
 
     # The retry ran out of the turn's budget, so the first answer is kept, stripped.
     assert str(UNBACKED) not in response.answer.replace(",", "")
@@ -261,14 +279,14 @@ async def test_retry_shares_the_turn_call_budget(make_service) -> None:
 
 async def test_retry_provider_failure_keeps_the_first_answer_stripped(make_service) -> None:
     service = make_service([lookup(), AIMessage(f"Consume {UNBACKED} W."), ConnectionError()])
-    response = await service.handle(None, "q")
+    response = await service.handle(USER, None, "q")
     assert response.response_type == "detail"
     assert "numbers_removed" in response.warnings
 
 
 async def test_tool_names_are_removed_when_the_retry_repeats_them(make_service) -> None:
     leak = AIMessage("Según Get_Actuator, aquí está.")
-    response = await make_service([lookup(), leak, leak]).handle(None, "q")
+    response = await make_service([lookup(), leak, leak]).handle(USER, None, "q")
     assert "actuator" not in response.answer.lower()
 
 
@@ -280,14 +298,14 @@ async def test_numbers_only_in_history_text_are_not_backed(make_service) -> None
             AIMessage(f"Dijiste {UNBACKED}."),
         ]
     )
-    first = await service.handle(None, f"tengo {UNBACKED}")
-    second = await service.handle(first.session_id, "¿qué dije?")
+    first = await service.handle(USER, None, f"tengo {UNBACKED}")
+    second = await service.handle(USER, first.session_id, "¿qué dije?")
     assert str(UNBACKED) not in second.answer.replace(",", "")
     assert "numbers_removed" in second.warnings
 
 
 async def test_empty_answer_is_a_controlled_error(make_service) -> None:
-    response = await make_service([lookup(), AIMessage("")]).handle(None, "q")
+    response = await make_service([lookup(), AIMessage("")]).handle(USER, None, "q")
     assert response.response_type == "error"
     assert response.answer == FALLBACK_ANSWER
     assert response.products == []
@@ -299,7 +317,7 @@ async def test_empty_answer_is_a_controlled_error(make_service) -> None:
 async def _spend(maker, cost: str, days_ago: int = 0) -> None:
     """A stored turn whose model call cost `cost` USD, created `days_ago` days back."""
     async with maker() as db:
-        session = await repo.create_session(db, "spent")
+        session = await repo.create_session(db, USER, "spent")
         message = await repo.add_message(db, session.id, "assistant", "a")
         await repo.add_trace(db, message.id, [], [UsageRecord(model="m", cost_usd=Decimal(cost))])
         if days_ago:
@@ -323,7 +341,7 @@ async def test_spent_budget_rejects_the_turn_before_the_model_runs(make_service)
     service, model = _budget_service(maker, "0.50", [lookup(), AIMessage("Listo.")])
 
     with pytest.raises(BudgetExceeded):
-        await service.handle(None, "hola")
+        await service.handle(USER, None, "hola")
 
     assert model.remaining == 2  # the model was never called
     assert await _count(maker, Message) == 2  # only the seeded turns
@@ -337,5 +355,5 @@ async def test_turn_runs_while_under_the_budget(make_service) -> None:
         maker, "0.50", [lookup(), AIMessage(f"El {PN} consume {POWER} W.")]
     )
 
-    response = await service.handle(None, f"datos del {PN}")
+    response = await service.handle(USER, None, f"datos del {PN}")
     assert response.response_type == "detail"

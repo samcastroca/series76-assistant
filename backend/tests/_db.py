@@ -1,5 +1,5 @@
 """Helpers for tests that need the Postgres service from docker compose: throwaway databases,
-raw asyncpg access and the Alembic config pointed at a given URL."""
+raw asyncpg access, the Alembic config pointed at a given URL and test users."""
 
 import asyncio
 import uuid
@@ -10,8 +10,12 @@ from pathlib import Path
 import asyncpg
 from alembic.config import Config
 from sqlalchemy.engine import URL, make_url
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
+from app.db import users
+from app.db.models import User
+from app.security import hash_password
 
 ALEMBIC_INI = Path(__file__).resolve().parents[1] / "alembic.ini"
 
@@ -59,3 +63,14 @@ def alembic_config(url: URL) -> Config:
     cfg = Config(str(ALEMBIC_INI))
     cfg.set_main_option("sqlalchemy.url", url.render_as_string(hide_password=False))
     return cfg
+
+
+async def create_user(
+    db: AsyncSession, email: str, role: str = "engineer", password: str = "pw"
+) -> User:
+    """Insert and commit a user with a real Argon2 hash of `password`."""
+    await users.insert_if_missing(db, email, hash_password(password), role)
+    await db.commit()
+    user = await users.get_by_email(db, email)
+    assert isinstance(user, User)
+    return user

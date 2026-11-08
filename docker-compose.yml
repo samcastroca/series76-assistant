@@ -31,8 +31,15 @@ services:
       FALLBACK_MODEL: ${FALLBACK_MODEL:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
-      DEBUG_API: ${DEBUG_API:-false}
       DAILY_BUDGET_USD: ${DAILY_BUDGET_USD:-}
+      # Auth. The defaults are for local development only; set real values in .env.
+      JWT_SECRET: ${JWT_SECRET:-dev-only-insecure-jwt-secret-change-me-0000}
+      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-30}
+      LOGIN_MAX_ATTEMPTS: ${LOGIN_MAX_ATTEMPTS:-5}
+      LOGIN_WINDOW_MINUTES: ${LOGIN_WINDOW_MINUTES:-15}
+      SEED_ENGINEER1_PASSWORD: ${SEED_ENGINEER1_PASSWORD:-engineer1-dev-password}
+      SEED_ENGINEER2_PASSWORD: ${SEED_ENGINEER2_PASSWORD:-engineer2-dev-password}
+      SEED_DEVELOPER_PASSWORD: ${SEED_DEVELOPER_PASSWORD:-developer-dev-password}
     ports:
       - "8000:8000"
     restart: unless-stopped

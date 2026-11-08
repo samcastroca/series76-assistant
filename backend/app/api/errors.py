@@ -12,24 +12,33 @@ _HTTP_CODES = {400: "invalid_request", 404: "not_found", 405: "method_not_allowe
 
 
 class ApiError(ConversationError):
-    """An error raised by a route, with its own status and code."""
+    """An error raised by a route or dependency, with its own status, code and headers (for
+    example WWW-Authenticate on 401, Retry-After on 429)."""
 
-    def __init__(self, status_code: int, code: str, message: str) -> None:
+    def __init__(
+        self, status_code: int, code: str, message: str, headers: dict[str, str] | None = None
+    ) -> None:
         super().__init__(message)
         self.status_code = status_code
         self.code = code
+        self.headers = headers
 
 
-def error_response(status_code: int, code: str, message: str) -> JSONResponse:
+def error_response(
+    status_code: int, code: str, message: str, headers: dict[str, str] | None = None
+) -> JSONResponse:
     return JSONResponse(
-        status_code=status_code, content={"error": {"code": code, "message": message}}
+        status_code=status_code,
+        content={"error": {"code": code, "message": message}},
+        headers=headers,
     )
 
 
 def install(app: FastAPI) -> None:
     @app.exception_handler(ConversationError)
     async def _conversation(_: Request, exc: ConversationError) -> JSONResponse:
-        return error_response(exc.status_code, exc.code, exc.message)
+        headers = exc.headers if isinstance(exc, ApiError) else None
+        return error_response(exc.status_code, exc.code, exc.message, headers)
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError) -> JSONResponse:

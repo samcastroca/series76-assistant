@@ -19,5 +19,6 @@ COPY data/processed ./data/processed
 
 EXPOSE 8000
 
-# Migrate, load the catalog (idempotent upsert of catalog.json; never calls an LLM), serve.
-CMD ["sh", "-c", "alembic upgrade head && python -m ingest.ingest load && exec uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000"]
+# Migrate, load the catalog (idempotent upsert of catalog.json; never calls an LLM), create the
+# demo users if missing (idempotent), serve.
+CMD ["sh", "-c", "alembic upgrade head && python -m ingest.ingest load && python -m app.db.seed && exec uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000"]

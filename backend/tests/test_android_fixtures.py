@@ -10,6 +10,7 @@ from typing import Any
 import pytest
 from pydantic import BaseModel, TypeAdapter
 
+from app.schemas.auth import LoginResponse, UserOut
 from app.schemas.conversation import ConversationResponse, MessageOut, SessionSummary
 from scripts.export_android_fixtures import OUT_DIR, generate, render
 
@@ -37,6 +38,8 @@ ERRORS = {
     "session_not_found": "session_not_found",
     "llm_unavailable": "llm_unavailable",
     "budget_exceeded": "budget_exceeded",
+    "invalid_credentials": "invalid_credentials",
+    "not_authenticated": "not_authenticated",
 }
 
 
@@ -51,6 +54,12 @@ def test_conversation_fixtures_match_the_response_model(response_type) -> None:
     assert parsed.response_type == response_type
     # Every field is present: the app decodes strictly in its contract tests.
     assert set(body) == set(ConversationResponse.model_fields)
+
+
+def test_auth_fixtures_match_their_models() -> None:
+    login = _load("auth_login")
+    assert set(login) == set(LoginResponse.model_fields)
+    assert LoginResponse.model_validate(login).user == UserOut.model_validate(_load("auth_me"))
 
 
 def test_session_and_message_fixtures_match_their_models() -> None:

@@ -1,6 +1,8 @@
 """Catalog tables: one row per part number, plus torque per service type and electrical data
 per frequency. NULL always means "not published"; it is never replaced with 0.
 
+Users: email, Argon2 password hash and role. Each session belongs to one user.
+
 Conversation tables: sessions, their messages, the tool calls behind each assistant message and
 the LLM usage of each turn. Deleting a session cascades to everything under it."""
 
@@ -34,6 +36,7 @@ PHASES = (1, 3)
 FREQUENCIES = (50, 60)
 ROLES = ("user", "assistant")
 MESSAGE_STATUSES = ("ok", "error")
+USER_ROLES = ("engineer", "developer")
 
 
 def _in(column: str, values: tuple) -> str:
@@ -139,15 +142,29 @@ def _now() -> Any:
     return mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
+    email: Mapped[str] = mapped_column(Text, unique=True)  # stored lowercase
+    password_hash: Mapped[str] = mapped_column(Text)
+    role: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = _now()
+
+    __table_args__ = (CheckConstraint(_in("role", USER_ROLES), name="ck_users_role"),)
+
+
 class ChatSession(Base):
     __tablename__ = "sessions"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
-    user_id: Mapped[uuid.UUID | None] = mapped_column(UUID)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID, ForeignKey("users.id", ondelete="CASCADE"))
     title: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = _now()
     updated_at: Mapped[datetime] = _now()
     state: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+
+    __table_args__ = (Index("ix_sessions_user_updated", "user_id", "updated_at"),)
 
 
 class Message(Base):

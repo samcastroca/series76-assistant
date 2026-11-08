@@ -1,5 +1,8 @@
 """REST endpoints. The chat payload carries only user-facing fields; tool calls, models and
-tokens are served separately by the debug trace endpoint."""
+tokens are served separately by the trace endpoint (developer role).
+
+Every route on `router` requires a valid token; only /health (and login, in app.api.auth) are
+public. Sessions are scoped to the current user: another user's session answers 404."""
 
 import uuid
 from typing import Annotated
@@ -9,7 +12,14 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db, get_service, get_settings
+from app.api.deps import (
+    CurrentUser,
+    get_current_user,
+    get_db,
+    get_service,
+    get_settings,
+    require_role,
+)
 from app.api.errors import ApiError
 from app.config import Settings
 from app.db import conversations as repo
@@ -22,9 +32,8 @@ from app.schemas.conversation import (
 )
 from app.services.conversation import ConversationService
 
-router = APIRouter()
-# Mounted only with DEBUG_API=true: otherwise the route does not exist (404, absent from /docs).
-debug_router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])  # new routes are protected
+public_router = APIRouter()
 Db = Annotated[AsyncSession, Depends(get_db)]
 CurrentSettings = Annotated[Settings, Depends(get_settings)]
 
@@ -32,6 +41,7 @@ CurrentSettings = Annotated[Settings, Depends(get_settings)]
 @router.post("/api/conversation", response_model=ConversationResponse)
 async def conversation(
     body: ConversationRequest,
+    user: CurrentUser,
     service: Annotated[ConversationService, Depends(get_service)],
     settings: CurrentSettings,
 ) -> ConversationResponse:
@@ -41,11 +51,11 @@ async def conversation(
     if len(query) > settings.max_query_chars:
         limit = settings.max_query_chars
         raise ApiError(400, "query_too_long", f"The query is longer than {limit} characters.")
-    return await service.handle(body.session_id, query)
+    return await service.handle(user.id, body.session_id, query)
 
 
 @router.get("/api/sessions", response_model=list[SessionSummary])
-async def list_sessions(db: Db) -> list[SessionSummary]:
+async def list_sessions(db: Db, user: CurrentUser) -> list[SessionSummary]:
     return [
         SessionSummary(
             id=r.session.id,
@@ -54,13 +64,13 @@ async def list_sessions(db: Db) -> list[SessionSummary]:
             updated_at=r.session.updated_at,
             message_count=r.message_count,
         )
-        for r in await repo.list_sessions(db)
+        for r in await repo.list_sessions(db, user.id)
     ]
 
 
 @router.get("/api/sessions/{session_id}/messages", response_model=list[MessageOut])
-async def list_messages(session_id: uuid.UUID, db: Db) -> list[MessageOut]:
-    if await repo.get_session(db, session_id) is None:
+async def list_messages(session_id: uuid.UUID, db: Db, user: CurrentUser) -> list[MessageOut]:
+    if await repo.get_session(db, session_id, user.id) is None:
         raise ApiError(404, "session_not_found", "Conversation not found.")
     out = []
     for m in await repo.list_messages(db, session_id):
@@ -84,15 +94,20 @@ async def list_messages(session_id: uuid.UUID, db: Db) -> list[MessageOut]:
 
 
 @router.delete("/api/sessions/{session_id}", status_code=204)
-async def delete_session(session_id: uuid.UUID, db: Db) -> Response:
-    if not await repo.delete_session(db, session_id):
+async def delete_session(session_id: uuid.UUID, db: Db, user: CurrentUser) -> Response:
+    if not await repo.delete_session(db, session_id, user.id):
         raise ApiError(404, "session_not_found", "Conversation not found.")
     await db.commit()
     return Response(status_code=204)
 
 
-@debug_router.get("/api/messages/{message_id}/trace", response_model=TraceOut)
+@router.get(
+    "/api/messages/{message_id}/trace",
+    response_model=TraceOut,
+    dependencies=[Depends(require_role("developer"))],
+)
 async def message_trace(message_id: uuid.UUID, db: Db) -> TraceOut:
+    """Any user's message: the developer role debugs the whole service."""
     trace = await repo.get_trace(db, message_id)
     if trace is None:
         raise ApiError(404, "message_not_found", "Message not found.")
@@ -105,7 +120,7 @@ async def message_trace(message_id: uuid.UUID, db: Db) -> TraceOut:
     )
 
 
-@router.get("/health")
+@public_router.get("/health")
 async def health(db: Db, settings: CurrentSettings) -> JSONResponse:
     """Database status and the configured provider and models (never keys). A status report,
     not an error: it keeps this body with 503 when the database is down."""
