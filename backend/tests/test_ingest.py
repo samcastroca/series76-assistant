@@ -126,6 +126,5 @@ def _value(record: ActuatorRecord, field: str) -> int | Decimal | None:
 
 @pytest.mark.parametrize(("page", "part_number", "field", "expected"), SPOT_CHECKS)
 def test_spot_values(by_pn, page: str, part_number: str, field: str, expected) -> None:
-    if expected is None:
-        pytest.skip(f"TODO: fill {part_number} {field} from the PDF ({page})")
+    assert expected is not None, f"fill {part_number} {field} from the PDF ({page})"
     assert _value(by_pn[part_number], field) == expected

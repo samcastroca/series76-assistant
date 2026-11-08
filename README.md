@@ -245,9 +245,9 @@ code, so the agent needs reliable tool calling and good Spanish more than raw re
 
 | Task | Variable | Model used | Why | Measured cost |
 | --- | --- | --- | --- | --- |
-| Agent (tool calling + answer) | `AGENT_MODEL` | `anthropic/claude-sonnet-5.5` via OpenRouter | TODO: why this model over the cheaper candidates listed in `docs/design.md` | $0.0202 per turn on average, about 7,840 tokens per turn (latest full eval) |
-| Fallback when the agent model fails | `FALLBACK_MODEL` | `z-ai/glm-5.3` via OpenRouter | A different provider from the agent model (TODO: why this one) | Not called in any eval run ($0) |
-| Vision extraction of the scanned PDF (human-run, once) | `INGEST_LLM_PROVIDER`, `INGEST_LLM_MODEL` | `google/gemini-3.8-flash-20260902` via OpenRouter (recorded in `backend/data/extracted/*.json`) | Vision with structured output; runs a few times and its output is committed | TODO: not recorded |
+| Agent (tool calling + answer) | `AGENT_MODEL` | `anthropic/claude-sonnet-5.5` via OpenRouter | The agent's job is strict instruction following more than reasoning: pick the right tool, never write numbers that are not in a tool result, no tables, no internals, answer in the user's language. A turn that fails the numeric validator is retried, which doubles its cost, so a model that gets it right the first time is cheaper in practice than a cheaper model that triggers retries. At the measured cost the $10 key covers about 500 turns, or about 12 full eval runs. Cheaper candidates (`docs/design.md`) were not run through the suite; trying one is a change of `AGENT_MODEL` plus `make eval-full` | $0.0202 per turn on average, about 7,840 tokens per turn (latest full eval) |
+| Fallback when the agent model fails | `FALLBACK_MODEL` | `z-ai/glm-5.3` via OpenRouter | A different provider and model family, so an outage or rate limit at the agent model's provider does not take the assistant down. It supports tool calling and only runs when the primary fails, so availability matters more than quality or price | Not called in any eval run ($0) |
+| Vision extraction of the scanned PDF (human-run, once) | `INGEST_LLM_PROVIDER`, `INGEST_LLM_MODEL` | `google/gemini-3.8-flash-20260902` via OpenRouter (recorded in `backend/data/extracted/*.json`) | Reads scanned tables well and returns structured JSON; the same family is free on Google AI Studio, so extraction can be tried without spending the key. It runs only when the PDF is re-read, and its output is committed | Not recorded: `extract` does not log usage. A run is 14 calls (7 tables, twice each) |
 | Tests and local runs | `LLM_PROVIDER=fake` | `fake-rules` (scripted, calls the real tools) | No cost, deterministic | $0 |
 
 Measured spend on the OpenRouter key:
@@ -257,8 +257,9 @@ Measured spend on the OpenRouter key:
   **$1.79 in total**.
 - Manual checks recorded in the local `llm_usage` table: 7 model calls to
   `anthropic/claude-sonnet-5.5` on 2026-11-08, $0.080.
-- TODO: total spend reported by the OpenRouter dashboard (the local database does not hold
-  usage from before its last reset).
+- The key's overall balance is on the OpenRouter dashboard. The repository records only the
+  eval runs above and the per-message usage in `llm_usage`, and the local database holds no usage
+  from before its last reset.
 
 ## Evaluation
 
@@ -338,7 +339,12 @@ Set `SEED_*_PASSWORD` in `.env` before the first start to use other passwords.
   are N/A and have no specs.
 - **A full eval costs about $0.81** with the current agent model, so it is run sparingly.
 - **Plain HTTP only for local hosts** in the app; any other backend address needs HTTPS.
-- TODO: other limitations found in manual testing.
+- **The numeric validator has accepted gaps** ([ADR 0004](docs/adr/0004-agent-and-conversation-service.md)):
+  allowlisted values (1-7, 10, 50, 60) are never flagged, a number backed by any result of the
+  session passes even if the sentence attributes it to another product, and numbers glued to
+  letters are not read.
+- **The compose `api` service loads the whole `.env`**, including keys it never uses (the ingest
+  and LangSmith keys). Keep those empty in the `.env` used to run the API.
 
 ## Built with Claude Code
 
