@@ -130,7 +130,7 @@ in `eval/cases_manual.jsonl` into `eval/cases.jsonl`. Twenty of them are marked 
 ```bash
 make eval-cases   # regenerate eval/cases.jsonl
 make eval-fast    # 20 fast cases against http://localhost:8000 (needs DEBUG_API=true)
-make eval-full    # every case with the paid provider; passes --confirm-paid: human only
+make eval-full    # every case with the paid provider; loads .env, passes --confirm-paid: human only
 ```
 
 `eval/run_eval.py` scores each turn on tool selection, argument accuracy, expected part numbers,

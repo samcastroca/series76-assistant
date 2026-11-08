@@ -27,6 +27,6 @@ eval-cases:
 eval-fast:
 	cd backend && uv run python -m eval.run_eval --fast
 
-# Full suite with the paid provider: HUMAN ONLY.
+# Full suite with the paid provider: HUMAN ONLY. Loads .env (LANGSMITH_*, EVAL_*); fails if missing.
 eval-full:
-	cd backend && uv run python -m eval.run_eval --confirm-paid
+	cd backend && uv run --env-file ../.env python -m eval.run_eval --confirm-paid
