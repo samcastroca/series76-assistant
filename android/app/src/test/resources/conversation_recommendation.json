@@ -1,0 +1,336 @@
+{
+  "session_id": "00000000-0000-4000-8000-000000000001",
+  "message_id": "00000000-0000-4000-8000-000000000003",
+  "answer": "Estos modelos cumplen los requisitos. Los datos están en las tarjetas.",
+  "response_type": "recommendation",
+  "products": [
+    {
+      "part_number": "761A00-11320000/A",
+      "series_size": 1,
+      "variant": "A",
+      "enclosure": "weatherproof",
+      "power_supply": {
+        "voltage_v": 220,
+        "phase": 1,
+        "current_type": "AC"
+      },
+      "certifications": [
+        "CSA",
+        "CE",
+        "UKCA"
+      ],
+      "csa_certified": true,
+      "hazardous_locations": null,
+      "data_available": true,
+      "service": [
+        {
+          "type": "on_off",
+          "torque": {
+            "in_lb": 700,
+            "nm": 80
+          },
+          "duty_cycle_pct": 40,
+          "cycles_per_hour": 36,
+          "starts_per_hour": null
+        },
+        {
+          "type": "modulating",
+          "torque": {
+            "in_lb": 580,
+            "nm": 65
+          },
+          "duty_cycle_pct": 40,
+          "cycles_per_hour": null,
+          "starts_per_hour": 960
+        }
+      ],
+      "electrical": [
+        {
+          "frequency_hz": 60,
+          "speed_s": 17,
+          "fla_a": 0.7,
+          "lra_a": 0.7
+        },
+        {
+          "frequency_hz": 50,
+          "speed_s": 20,
+          "fla_a": 0.7,
+          "lra_a": 0.7
+        }
+      ],
+      "motor_power_w": 15,
+      "notes": [],
+      "source": {
+        "table": "wp_220v_1ph",
+        "page": 1
+      },
+      "matched_service": "modulating",
+      "meets_requirements": true,
+      "unmet": []
+    },
+    {
+      "part_number": "761B00-11320000/A",
+      "series_size": 1,
+      "variant": "B",
+      "enclosure": "weatherproof",
+      "power_supply": {
+        "voltage_v": 220,
+        "phase": 1,
+        "current_type": "AC"
+      },
+      "certifications": [
+        "CSA",
+        "CE",
+        "UKCA"
+      ],
+      "csa_certified": true,
+      "hazardous_locations": null,
+      "data_available": true,
+      "service": [
+        {
+          "type": "on_off",
+          "torque": {
+            "in_lb": 880,
+            "nm": 100
+          },
+          "duty_cycle_pct": 40,
+          "cycles_per_hour": 31,
+          "starts_per_hour": null
+        },
+        {
+          "type": "modulating",
+          "torque": {
+            "in_lb": 620,
+            "nm": 70
+          },
+          "duty_cycle_pct": 40,
+          "cycles_per_hour": null,
+          "starts_per_hour": 960
+        }
+      ],
+      "electrical": [
+        {
+          "frequency_hz": 60,
+          "speed_s": 19,
+          "fla_a": 0.7,
+          "lra_a": 0.7
+        },
+        {
+          "frequency_hz": 50,
+          "speed_s": 23,
+          "fla_a": 0.7,
+          "lra_a": 0.7
+        }
+      ],
+      "motor_power_w": 15,
+      "notes": [],
+      "source": {
+        "table": "wp_220v_1ph",
+        "page": 1
+      },
+      "matched_service": "modulating",
+      "meets_requirements": true,
+      "unmet": []
+    },
+    {
+      "part_number": "762A00-11320000/A",
+      "series_size": 2,
+      "variant": "A",
+      "enclosure": "weatherproof",
+      "power_supply": {
+        "voltage_v": 220,
+        "phase": 1,
+        "current_type": "AC"
+      },
+      "certifications": [
+        "CSA",
+        "CE",
+        "UKCA"
+      ],
+      "csa_certified": true,
+      "hazardous_locations": null,
+      "data_available": true,
+      "service": [
+        {
+          "type": "on_off",
+          "torque": {
+            "in_lb": 1330,
+            "nm": 150
+          },
+          "duty_cycle_pct": 35,
+          "cycles_per_hour": 30,
+          "starts_per_hour": null
+        },
+        {
+          "type": "modulating",
+          "torque": {
+            "in_lb": 1150,
+            "nm": 130
+          },
+          "duty_cycle_pct": 40,
+          "cycles_per_hour": null,
+          "starts_per_hour": 960
+        }
+      ],
+      "electrical": [
+        {
+          "frequency_hz": 60,
+          "speed_s": 18,
+          "fla_a": 1.0,
+          "lra_a": 1.2
+        },
+        {
+          "frequency_hz": 50,
+          "speed_s": 21,
+          "fla_a": 1.0,
+          "lra_a": 1.1
+        }
+      ],
+      "motor_power_w": 40,
+      "notes": [],
+      "source": {
+        "table": "wp_220v_1ph",
+        "page": 1
+      },
+      "matched_service": "modulating",
+      "meets_requirements": true,
+      "unmet": []
+    },
+    {
+      "part_number": "762B00-11320000/A",
+      "series_size": 2,
+      "variant": "B",
+      "enclosure": "weatherproof",
+      "power_supply": {
+        "voltage_v": 220,
+        "phase": 1,
+        "current_type": "AC"
+      },
+      "certifications": [
+        "CSA",
+        "CE",
+        "UKCA"
+      ],
+      "csa_certified": true,
+      "hazardous_locations": null,
+      "data_available": true,
+      "service": [
+        {
+          "type": "on_off",
+          "torque": {
+            "in_lb": 1750,
+            "nm": 200
+          },
+          "duty_cycle_pct": 35,
+          "cycles_per_hour": 21,
+          "starts_per_hour": null
+        },
+        {
+          "type": "modulating",
+          "torque": {
+            "in_lb": 1330,
+            "nm": 150
+          },
+          "duty_cycle_pct": 40,
+          "cycles_per_hour": null,
+          "starts_per_hour": 960
+        }
+      ],
+      "electrical": [
+        {
+          "frequency_hz": 60,
+          "speed_s": 24,
+          "fla_a": 1.1,
+          "lra_a": 1.2
+        },
+        {
+          "frequency_hz": 50,
+          "speed_s": 29,
+          "fla_a": 1.1,
+          "lra_a": 1.1
+        }
+      ],
+      "motor_power_w": 40,
+      "notes": [],
+      "source": {
+        "table": "wp_220v_1ph",
+        "page": 1
+      },
+      "matched_service": "modulating",
+      "meets_requirements": true,
+      "unmet": []
+    },
+    {
+      "part_number": "763A00-11320000/A",
+      "series_size": 3,
+      "variant": "A",
+      "enclosure": "weatherproof",
+      "power_supply": {
+        "voltage_v": 220,
+        "phase": 1,
+        "current_type": "AC"
+      },
+      "certifications": [
+        "CSA",
+        "CE",
+        "UKCA"
+      ],
+      "csa_certified": true,
+      "hazardous_locations": null,
+      "data_available": true,
+      "service": [
+        {
+          "type": "on_off",
+          "torque": {
+            "in_lb": 2650,
+            "nm": 300
+          },
+          "duty_cycle_pct": 40,
+          "cycles_per_hour": 24,
+          "starts_per_hour": null
+        },
+        {
+          "type": "modulating",
+          "torque": {
+            "in_lb": 1950,
+            "nm": 220
+          },
+          "duty_cycle_pct": 40,
+          "cycles_per_hour": null,
+          "starts_per_hour": 960
+        }
+      ],
+      "electrical": [
+        {
+          "frequency_hz": 60,
+          "speed_s": 24,
+          "fla_a": 1.3,
+          "lra_a": 1.4
+        },
+        {
+          "frequency_hz": 50,
+          "speed_s": 29,
+          "fla_a": 1.3,
+          "lra_a": 1.5
+        }
+      ],
+      "motor_power_w": 40,
+      "notes": [],
+      "source": {
+        "table": "wp_220v_1ph",
+        "page": 1
+      },
+      "matched_service": "modulating",
+      "meets_requirements": true,
+      "unmet": []
+    }
+  ],
+  "highlight_fields": [
+    "enclosure",
+    "power_supply",
+    "service"
+  ],
+  "clarification": null,
+  "suggestions": [],
+  "warnings": []
+}

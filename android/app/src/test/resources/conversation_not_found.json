@@ -1,0 +1,17 @@
+{
+  "session_id": "00000000-0000-4000-8000-000000000008",
+  "message_id": "00000000-0000-4000-8000-000000000009",
+  "answer": "No encontré ese part number. Revisa las sugerencias.",
+  "response_type": "not_found",
+  "products": [],
+  "highlight_fields": [],
+  "clarification": null,
+  "suggestions": [
+    "761A00-11300000/A",
+    "761A00-11320000/A",
+    "761X30-11380000/A",
+    "761Y30-11380000/A",
+    "761A00-11330C00/A"
+  ],
+  "warnings": []
+}

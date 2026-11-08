@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": "llm_unavailable",
+    "message": "The language model is unavailable. Try again."
+  }
+}

@@ -1,4 +1,4 @@
-.PHONY: up down test lint ingest eval-cases eval-fast eval-full
+.PHONY: up down test lint ingest eval-cases eval-fast eval-full android-fixtures
 
 up:
 	docker compose up --build
@@ -22,6 +22,12 @@ ingest:
 # Regenerate eval/cases.jsonl from catalog.json + eval/cases_manual.jsonl.
 eval-cases:
 	cd backend && uv run python -m eval.generate_cases
+
+# Regenerate the Android app's JSON fixtures from the real API (fake LLM, throwaway database).
+# Needs the db service running (docker compose up db).
+android-fixtures: export LLM_PROVIDER = fake
+android-fixtures:
+	cd backend && uv run python -m scripts.export_android_fixtures
 
 # The 20 fast cases against the running API (needs DEBUG_API=true). Refuses a paid provider.
 eval-fast:

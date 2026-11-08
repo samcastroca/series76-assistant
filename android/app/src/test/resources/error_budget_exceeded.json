@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": "budget_exceeded",
+    "message": "The daily usage limit was reached. Try again tomorrow."
+  }
+}

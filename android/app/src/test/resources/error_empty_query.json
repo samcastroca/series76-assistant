@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": "empty_query",
+    "message": "The query is empty."
+  }
+}

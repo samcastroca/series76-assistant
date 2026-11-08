@@ -1,0 +1,46 @@
+{
+  "session_id": "00000000-0000-4000-8000-000000000010",
+  "message_id": "00000000-0000-4000-8000-000000000011",
+  "answer": "Ese part number existe, pero sus datos no están publicados en las tablas.",
+  "response_type": "no_data",
+  "products": [
+    {
+      "part_number": "761A00-11330C00/A",
+      "series_size": 1,
+      "variant": "A",
+      "enclosure": "weatherproof",
+      "power_supply": {
+        "voltage_v": 220,
+        "phase": 3,
+        "current_type": "AC"
+      },
+      "certifications": [
+        "CSA",
+        "CE",
+        "UKCA"
+      ],
+      "csa_certified": true,
+      "hazardous_locations": null,
+      "data_available": false,
+      "service": [],
+      "electrical": [],
+      "motor_power_w": null,
+      "notes": [
+        "no_published_data"
+      ],
+      "source": {
+        "table": "wp_220v_3ph",
+        "page": 2
+      },
+      "matched_service": null,
+      "meets_requirements": true,
+      "unmet": []
+    }
+  ],
+  "highlight_fields": [],
+  "clarification": null,
+  "suggestions": [],
+  "warnings": [
+    "no_published_data"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "session_id": "00000000-0000-4000-8000-000000000012",
+  "message_id": "00000000-0000-4000-8000-000000000013",
+  "answer": "Estas son las opciones disponibles en el catálogo. ¿Cuál necesitas?",
+  "response_type": "clarification",
+  "products": [],
+  "highlight_fields": [],
+  "clarification": {
+    "question": "Estas son las opciones disponibles en el catálogo. ¿Cuál necesitas?",
+    "options": [
+      "24 V AC/DC (explosionproof)",
+      "24 V DC (explosionproof)",
+      "110 V 1ph AC (explosionproof)",
+      "220 V 1ph AC (explosionproof)",
+      "110 V 1ph AC (weatherproof)",
+      "220 V 1ph AC (weatherproof)",
+      "220 V 3ph AC (weatherproof)",
+      "explosionproof",
+      "weatherproof",
+      "on_off",
+      "modulating",
+      "unspecified"
+    ]
+  },
+  "suggestions": [],
+  "warnings": []
+}

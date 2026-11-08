@@ -1,0 +1,280 @@
+{
+  "session_id": "00000000-0000-4000-8000-000000000006",
+  "message_id": "00000000-0000-4000-8000-000000000007",
+  "answer": "Ningún modelo cumple todos los requisitos. Estas son las alternativas más cercanas.",
+  "response_type": "no_match",
+  "products": [
+    {
+      "part_number": "763X30-11380000/A",
+      "series_size": 3,
+      "variant": "X",
+      "enclosure": "explosionproof",
+      "power_supply": {
+        "voltage_v": 24,
+        "phase": null,
+        "current_type": "AC/DC"
+      },
+      "certifications": [
+        "CSA"
+      ],
+      "csa_certified": true,
+      "hazardous_locations": [
+        "Class I, Division 1, Groups C, D; T4",
+        "Ex d IIB T4 Gb",
+        "Class I, Zone 1, AEx d IIB T4 Gb"
+      ],
+      "data_available": true,
+      "service": [
+        {
+          "type": "on_off",
+          "torque": {
+            "in_lb": 2120,
+            "nm": 240
+          },
+          "duty_cycle_pct": 35,
+          "cycles_per_hour": 160,
+          "starts_per_hour": null
+        }
+      ],
+      "electrical": [
+        {
+          "frequency_hz": null,
+          "speed_s": 32,
+          "fla_a": 8.9,
+          "lra_a": 30.8
+        }
+      ],
+      "motor_power_w": 40,
+      "notes": [],
+      "source": {
+        "table": "xp_24v_on_off",
+        "page": 3
+      },
+      "matched_service": "on_off",
+      "meets_requirements": false,
+      "unmet": [
+        "min_torque"
+      ]
+    },
+    {
+      "part_number": "763X30-11370000/A",
+      "series_size": 3,
+      "variant": "X",
+      "enclosure": "explosionproof",
+      "power_supply": {
+        "voltage_v": 24,
+        "phase": null,
+        "current_type": "DC"
+      },
+      "certifications": [
+        "CSA"
+      ],
+      "csa_certified": true,
+      "hazardous_locations": [
+        "Class I, Division 1, Groups C, D; T4",
+        "Ex d IIB T4 Gb",
+        "Class I, Zone 1, AEx d IIB T4 Gb"
+      ],
+      "data_available": true,
+      "service": [
+        {
+          "type": "modulating",
+          "torque": {
+            "in_lb": 1900,
+            "nm": 220
+          },
+          "duty_cycle_pct": 35,
+          "cycles_per_hour": null,
+          "starts_per_hour": 840
+        }
+      ],
+      "electrical": [
+        {
+          "frequency_hz": null,
+          "speed_s": 32,
+          "fla_a": 8.9,
+          "lra_a": 30.8
+        }
+      ],
+      "motor_power_w": 40,
+      "notes": [],
+      "source": {
+        "table": "xp_24v_modulating",
+        "page": 3
+      },
+      "matched_service": "modulating",
+      "meets_requirements": false,
+      "unmet": [
+        "min_torque"
+      ]
+    },
+    {
+      "part_number": "762Y30-11380000/A",
+      "series_size": 2,
+      "variant": "Y",
+      "enclosure": "explosionproof",
+      "power_supply": {
+        "voltage_v": 24,
+        "phase": null,
+        "current_type": "AC/DC"
+      },
+      "certifications": [
+        "CSA"
+      ],
+      "csa_certified": true,
+      "hazardous_locations": [
+        "Class I, Division 1, Groups C, D; T4",
+        "Ex d IIB T4 Gb",
+        "Class I, Zone 1, AEx d IIB T4 Gb"
+      ],
+      "data_available": true,
+      "service": [
+        {
+          "type": "on_off",
+          "torque": {
+            "in_lb": 1410,
+            "nm": 160
+          },
+          "duty_cycle_pct": 40,
+          "cycles_per_hour": 200,
+          "starts_per_hour": null
+        }
+      ],
+      "electrical": [
+        {
+          "frequency_hz": null,
+          "speed_s": 22,
+          "fla_a": 7.4,
+          "lra_a": 16.9
+        }
+      ],
+      "motor_power_w": 40,
+      "notes": [],
+      "source": {
+        "table": "xp_24v_on_off",
+        "page": 3
+      },
+      "matched_service": "on_off",
+      "meets_requirements": false,
+      "unmet": [
+        "min_torque"
+      ]
+    },
+    {
+      "part_number": "762X30-11380000/A",
+      "series_size": 2,
+      "variant": "X",
+      "enclosure": "explosionproof",
+      "power_supply": {
+        "voltage_v": 24,
+        "phase": null,
+        "current_type": "AC/DC"
+      },
+      "certifications": [
+        "CSA"
+      ],
+      "csa_certified": true,
+      "hazardous_locations": [
+        "Class I, Division 1, Groups C, D; T4",
+        "Ex d IIB T4 Gb",
+        "Class I, Zone 1, AEx d IIB T4 Gb"
+      ],
+      "data_available": true,
+      "service": [
+        {
+          "type": "on_off",
+          "torque": {
+            "in_lb": 1350,
+            "nm": 150
+          },
+          "duty_cycle_pct": 40,
+          "cycles_per_hour": 200,
+          "starts_per_hour": null
+        }
+      ],
+      "electrical": [
+        {
+          "frequency_hz": null,
+          "speed_s": 22,
+          "fla_a": 6.0,
+          "lra_a": 16.9
+        }
+      ],
+      "motor_power_w": 40,
+      "notes": [],
+      "source": {
+        "table": "xp_24v_on_off",
+        "page": 3
+      },
+      "matched_service": "on_off",
+      "meets_requirements": false,
+      "unmet": [
+        "min_torque"
+      ]
+    },
+    {
+      "part_number": "762Y30-11370000/A",
+      "series_size": 2,
+      "variant": "Y",
+      "enclosure": "explosionproof",
+      "power_supply": {
+        "voltage_v": 24,
+        "phase": null,
+        "current_type": "DC"
+      },
+      "certifications": [
+        "CSA"
+      ],
+      "csa_certified": true,
+      "hazardous_locations": [
+        "Class I, Division 1, Groups C, D; T4",
+        "Ex d IIB T4 Gb",
+        "Class I, Zone 1, AEx d IIB T4 Gb"
+      ],
+      "data_available": true,
+      "service": [
+        {
+          "type": "modulating",
+          "torque": {
+            "in_lb": 1270,
+            "nm": 145
+          },
+          "duty_cycle_pct": 40,
+          "cycles_per_hour": null,
+          "starts_per_hour": 960
+        }
+      ],
+      "electrical": [
+        {
+          "frequency_hz": null,
+          "speed_s": 22,
+          "fla_a": 7.4,
+          "lra_a": 16.9
+        }
+      ],
+      "motor_power_w": 40,
+      "notes": [],
+      "source": {
+        "table": "xp_24v_modulating",
+        "page": 3
+      },
+      "matched_service": "modulating",
+      "meets_requirements": false,
+      "unmet": [
+        "min_torque"
+      ]
+    }
+  ],
+  "highlight_fields": [
+    "torque"
+  ],
+  "clarification": null,
+  "suggestions": [
+    "763X30-11380000/A",
+    "763X30-11370000/A",
+    "762Y30-11380000/A",
+    "762X30-11380000/A",
+    "762Y30-11370000/A"
+  ],
+  "warnings": []
+}
