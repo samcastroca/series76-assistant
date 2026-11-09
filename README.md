@@ -295,6 +295,26 @@ The full design (data model, API contract, agent, edge cases) is in
 | [0007](docs/adr/0007-app-session-storage.md) | App session: encrypted storage and one session state |
 | [0008](docs/adr/0008-summary-as-product-context.md) | Summary PDF as product context in the prompt |
 
+### Security: OWASP Top 10 for LLM Applications
+
+How the design answers each risk of the
+[2026 edition](https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/). Most controls are
+the architecture above: the model only picks typed tools and writes prose, and code checks that
+prose before it is stored or shown.
+
+| Risk | How the project handles it |
+| --- | --- |
+| LLM01 Prompt Injection | The model's only power is calling three read-only tools with typed Pydantic arguments (`Literal` enums for closed sets), run as parameterized queries. No text-to-SQL, so an injected instruction can change at most which catalog rows are read. The only untrusted input is the user's own query; tool results come from the catalog, not from the web or user files. There is no injection classifier. |
+| LLM02 Sensitive Information Disclosure | The model sees only the catalog, the product summary and the current user's session. Sessions are filtered by `user_id` and another user's session answers 404; every `/api/*` route except login needs a JWT, and a test sweeps the OpenAPI paths to enforce it. Passwords are hashed with Argon2; in the app the token is stored encrypted and excluded from backups. Secrets live only in `.env`. |
+| LLM03 Excessive Agency | Three tools, all read-only; none writes data, sends anything or calls out. Per-turn limits on model calls and tool calls (`MODEL_CALL_LIMIT`, `TOOL_CALL_LIMIT`, 6 each by default) stop runaway loops with a controlled error answer. |
+| LLM04 Supply Chain | Dependencies are pinned in `uv.lock` and the Gradle version catalog. Models are chosen by environment variable and reached through OpenRouter; a fallback model from a different provider covers an outage. |
+| LLM05 Data and Model Poisoning | No fine-tuning and no retrieval index. The catalog comes from the source PDF through a reproducible ingest: two vision runs per table, discrepancies logged in `data/extracted/discrepancies.md`, human-reviewed fixes in `data/corrections.yaml`, and tests on row counts, N/A rows and CSA flags. |
+| LLM06 Unbounded Consumption | Output capped at `LLM_MAX_TOKENS` (1500, [ADR 0005](docs/adr/0005-output-token-cap.md)), query length capped at 20,000 characters, history limited to `HISTORY_TURNS`, per-turn call limits, an optional daily spend cap (`DAILY_BUDGET_USD`, 503 once reached), and a login rate limiter per IP and email. Usage and cost are recorded per model call in `llm_usage`. Chat requests themselves are not rate-limited. |
+| LLM07 Misinformation | Numbers never come from the model: the backend builds `products` from tool results and the app renders specs from it. The numeric validator checks every number and part number in `answer` against this session's tool results; a failing answer is retried once and then has the unsupported numbers stripped. `temperature=0`, `NULL` shown as "not published", and the eval scores numeric faithfulness on every turn. |
+| LLM08 Hidden Context Exposure | The system prompt and product context hold no secrets, credentials or catalog values. Tool names, field names, raw JSON and stack traces are checked out of `answer`; internals go only to `/api/messages/{id}/trace`, which requires the `developer` role. |
+| LLM09 Vector and Embedding Weaknesses | Not applicable: no embeddings or vector store (see *Tables as structured data, not RAG*). |
+| LLM10 Improper Output Handling | The model's text is never executed or used as a query. It is checked by the validator and the internals check, stored, and shown by a native Compose Markdown renderer (no WebView, no HTML). Structured data in the response is built by code, not parsed from the text. |
+
 ## Model choices
 
 All models are set by environment variables; none is hardcoded. The heavy lifting is done by
